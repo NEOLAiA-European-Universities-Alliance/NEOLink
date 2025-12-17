@@ -10,5 +10,12 @@
     "draftAndPublish": true
   },
   "pluginOptions": {},
-  "attributes": {}
+  "attributes": {
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    }
+  }
 }
