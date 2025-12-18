@@ -614,6 +614,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     pedagogical_objectives: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
     second_level_structure: Schema.Attribute.Integer;
+    seller_name: Schema.Attribute.String;
     speakers: Schema.Attribute.Text;
     start_date: Schema.Attribute.Date;
     university: Schema.Attribute.Integer;

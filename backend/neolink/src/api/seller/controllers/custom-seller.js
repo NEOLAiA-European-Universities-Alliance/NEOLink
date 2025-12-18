@@ -49,7 +49,6 @@ module.exports = {
                         }
                 });
                 const virtual_cafe_profile = response.data;
-                console.log("Discourse profile response for email " + email + ": ", virtual_cafe_profile);
                 if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
                     full_name = virtual_cafe_profile[0].name || "";
                     virtual_cafe_id = virtual_cafe_profile[0].id || false;
@@ -60,7 +59,6 @@ module.exports = {
                 try{
                         const response_orh = await axios.get(`${process.env.ORH_API_URL}/neolaia-usr/?email=${email}`);
                         const orh_profile = response_orh.data;
-                        console.log("ORH profile response for email " + email + ": ", orh_profile);
                         if (orh_profile){
                             full_name = full_name || (orh_profile ? orh_profile.user_name + orh_profile.user_surname : "");
                             university_name = orh_profile ? orh_profile.university_name : "";
@@ -138,7 +136,6 @@ module.exports = {
             } else {
                 return ctx.response.unauthorized('You are not authorized to access this resource, you must authenticate yourself')
             }
-            console.log(entry)
             const token = jwt.sign({
                 user_id: entry.id, 
                 email: entry.email,

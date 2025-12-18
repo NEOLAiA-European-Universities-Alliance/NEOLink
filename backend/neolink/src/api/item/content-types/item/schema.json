@@ -82,6 +82,9 @@
         "videos",
         "audios"
       ]
+    },
+    "seller_name": {
+      "type": "string"
     }
   }
 }
