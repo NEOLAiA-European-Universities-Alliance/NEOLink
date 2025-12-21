@@ -10,12 +10,13 @@ const logo_neolink = "/logo.png";
 function CreateItemForm({ token }) {
     const [userData, setUserData] = useState(null);
     const [formData, setFormData] = useState({
-        item_status: 'draft',
+        item_status: 'active',
         name: '',
         description: '',
         category_id: '',
         expiration: '',
         isced_code: '',
+        erc_area: '',
         erc_panel: '',
         erc_keyword: '',
         start_date: '',
@@ -48,9 +49,16 @@ function CreateItemForm({ token }) {
 
     // Item status options
     const itemStatusOptions = [
-        { value: 'draft', label: 'Draft' },
-        { value: 'published', label: 'Published' },
-        { value: 'archived', label: 'Archived' }
+        { value: 'active', label: 'Active' },
+        { value: 'running', label: 'Running' },
+        { value: 'expired', label: 'Expired' }
+    ];
+
+    // ERC Area options
+    const ercAreaOptions = [
+        { value: 'Life Sciences (LS)', label: 'Life Sciences (LS)' },
+        { value: 'Physical Sciences and Engineering (PE)', label: 'Physical Sciences and Engineering (PE)' },
+        { value: 'Social Sciences and Humanities (SH)', label: 'Social Sciences and Humanities (SH)' }
     ];
 
     // Format name to title case
@@ -63,43 +71,27 @@ function CreateItemForm({ token }) {
             .join(' ');
     };
 
+    // Initial load - without dependent dropdowns (loaded separately)
     useEffect(() => {
         const initializeForm = async () => {
             try {
-                // Decode token to get user data
                 const decoded = jwtDecode(token);
                 console.log("Decoded token:", decoded);
                 setUserData(decoded);
 
-                // Load dropdown data from API
                 const [
                     universitiesRes,
-                    firstLevelRes,
-                    secondLevelRes,
-                    ercPanelsRes,
-                    ercKeywordsRes,
                     categoriesRes
                 ] = await Promise.all([
                     axios.get(`${base_url}/universities`),
-                    axios.get(`${base_url}/first-level-structures`),
-                    axios.get(`${base_url}/second-level-structures`),
-                    axios.get(`${base_url}/erc-panels`),
-                    axios.get(`${base_url}/erc-keywords`),
                     axios.get(`${base_url}/item-categories`)
                 ]);
 
                 console.log("Universities:", universitiesRes.data);
-                console.log("First Level:", firstLevelRes.data);
-                console.log("Second Level:", secondLevelRes.data);
 
                 setUniversities(universitiesRes.data.data || universitiesRes.data || []);
-                setFirstLevelStructures(firstLevelRes.data.data || firstLevelRes.data || []);
-                setSecondLevelStructures(secondLevelRes.data.data || secondLevelRes.data || []);
-                setErcPanels(ercPanelsRes.data.data || ercPanelsRes.data || []);
-                setErcKeywords(ercKeywordsRes.data.data || ercKeywordsRes.data || []);
                 setCategories(categoriesRes.data.data || categoriesRes.data || []);
 
-                // Pre-fill form with token data - try multiple possible field names
                 const universityId = decoded.university_id || decoded.university || decoded.universityId || '';
                 const firstLevelId = decoded.first_level_structure_id || decoded.first_level_structure || decoded.firstLevelStructure || '';
                 const secondLevelId = decoded.second_level_structure_id || decoded.second_level_structure || decoded.secondLevelStructure || '';
@@ -128,6 +120,165 @@ function CreateItemForm({ token }) {
         }
     }, [token]);
 
+    // Load first level structures based on university
+    useEffect(() => {
+        const loadFirstLevelStructures = async () => {
+            if (formData.university) {
+                try {
+                    const response = await axios.get(
+                        `${base_url}/custom-first-level/?university=${formData.university}`
+                    );
+                    setFirstLevelStructures(response.data.data || response.data || []);
+                    console.log("First level structures:", response.data);
+                    
+                    if (formData.first_level_structure) {
+                        const isValid = (response.data.data || response.data || [])
+                            .some(struct => struct.id === formData.first_level_structure);
+                        if (!isValid) {
+                            setFormData(prev => ({
+                                ...prev,
+                                first_level_structure: '',
+                                second_level_structure: '' // Also reset second level
+                            }));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading first level structures:", err);
+                    setFirstLevelStructures([]);
+                }
+            } else {
+                setFirstLevelStructures([]);
+                setFormData(prev => ({
+                    ...prev,
+                    first_level_structure: '',
+                    second_level_structure: ''
+                }));
+            }
+        };
+
+        loadFirstLevelStructures();
+    }, [formData.university]);
+
+    // Load second level structures based on first level structure
+    useEffect(() => {
+        const loadSecondLevelStructures = async () => {
+            if (formData.first_level_structure) {
+                try {
+                    const response = await axios.get(
+                        `${base_url}/second-level-structures?filters[first_level_structure][documentId][$eq]=${formData.first_level_structure}&populate=first_level_structure`
+                        
+                    );
+                    setSecondLevelStructures(response.data.data || response.data || []);
+                    console.log("Second level structures:", response.data);
+                    
+                    // Reset second_level_structure if it's not valid for the new first level
+                    if (formData.second_level_structure) {
+                        const isValid = (response.data.data || response.data || [])
+                            .some(struct => struct.id === formData.second_level_structure);
+                        if (!isValid) {
+                            setFormData(prev => ({
+                                ...prev,
+                                second_level_structure: ''
+                            }));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading second level structures:", err);
+                    setSecondLevelStructures([]);
+                }
+            } else {
+                setSecondLevelStructures([]);
+                // Clear second_level_structure if no first level is selected
+                setFormData(prev => ({
+                    ...prev,
+                    second_level_structure: ''
+                }));
+            }
+        };
+
+        loadSecondLevelStructures();
+    }, [formData.first_level_structure]);
+
+    // Load ERC panels based on selected ERC area
+    useEffect(() => {
+        const loadErcPanels = async () => {
+            if (formData.erc_area) {
+                try {
+                    const response = await axios.get(
+                        `${base_url}/custom-erc-panel/?erc_area=${formData.erc_area}`
+                    );
+                    console.log("ERC Panels for area", formData.erc_area, ":", response.data);
+                    setErcPanels(response.data.data || response.data || []);
+                    
+                    // Reset erc_panel if it's not valid for the new area
+                    if (formData.erc_panel) {
+                        const isValid = (response.data.data || response.data || [])
+                            .some(panel => panel.documentId === formData.erc_panel);
+                        if (!isValid) {
+                            setFormData(prev => ({
+                                ...prev,
+                                erc_panel: '',
+                                erc_keyword: '' // Also reset keyword when panel is reset
+                            }));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading ERC panels:", err);
+                    setErcPanels([]);
+                }
+            } else {
+                setErcPanels([]);
+                // Clear erc_panel and erc_keyword if no area is selected
+                setFormData(prev => ({
+                    ...prev,
+                    erc_panel: '',
+                    erc_keyword: ''
+                }));
+            }
+        };
+
+        loadErcPanels();
+    }, [formData.erc_area]);
+
+    // Load ERC keywords based on selected ERC panel
+    useEffect(() => {
+        const loadErcKeywords = async () => {
+            if (formData.erc_panel) {
+                try {
+                    const response = await axios.get(
+                        `${base_url}/erc-keywords?filters[erc_panel][documentId][$eq]=${formData.erc_panel}&populate=erc_panel`
+                    );
+                    console.log("ERC Keywords for panel", formData.erc_panel, ":", response.data);
+                    setErcKeywords(response.data.data || response.data || []);
+                    
+                    // Reset erc_keyword if it's not valid for the new panel
+                    if (formData.erc_keyword) {
+                        const isValid = (response.data.data || response.data || [])
+                            .some(keyword => keyword.id === formData.erc_keyword);
+                        if (!isValid) {
+                            setFormData(prev => ({
+                                ...prev,
+                                erc_keyword: ''
+                            }));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading ERC keywords:", err);
+                    setErcKeywords([]);
+                }
+            } else {
+                setErcKeywords([]);
+                // Clear erc_keyword if no panel is selected
+                setFormData(prev => ({
+                    ...prev,
+                    erc_keyword: ''
+                }));
+            }
+        };
+
+        loadErcKeywords();
+    }, [formData.erc_panel]);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -149,17 +300,14 @@ function CreateItemForm({ token }) {
         setError(null);
 
         try {
-            // Create FormData for file upload
             const submitData = new FormData();
             
-            // Add user_id from token
             const decoded = jwtDecode(token);
             const userId = decoded.sub || decoded.id || decoded.user_id || decoded.userId;
             
             console.log("Submitting with user_id:", userId);
             submitData.append('data[user_id]', userId);
             
-            // Append all form fields
             Object.keys(formData).forEach(key => {
                 if (formData[key] !== null && formData[key] !== '') {
                     if (key === 'cover' && formData[key]) {
@@ -170,7 +318,6 @@ function CreateItemForm({ token }) {
                 }
             });
 
-            // Log what we're sending
             console.log("Form data being sent:");
             for (let pair of submitData.entries()) {
                 console.log(pair[0], pair[1]);
@@ -191,21 +338,21 @@ function CreateItemForm({ token }) {
             setSuccess(true);
             setSubmitting(false);
             
-            // Reset form after 2 seconds
             setTimeout(() => {
                 setSuccess(false);
-                const universityId = userData?.university_id || userData?.university || '';
+                const universityId = userData?.university_id || userData?.university_name || '';
                 const firstLevelId = userData?.first_level_structure_id || userData?.first_level_structure || '';
                 const secondLevelId = userData?.second_level_structure_id || userData?.second_level_structure || '';
                 const fullName = userData?.full_name || userData?.fullName || userData?.name || '';
                 
                 setFormData({
-                    item_status: 'draft',
+                    item_status: 'active',
                     name: '',
                     description: '',
                     category_id: '',
                     expiration: '',
                     isced_code: '',
+                    erc_area: '',
                     erc_panel: '',
                     erc_keyword: '',
                     start_date: '',
@@ -387,7 +534,7 @@ function CreateItemForm({ token }) {
                             />
                         </div>
 
-                        {/* Offered By (Pre-filled from token) */}
+                        {/* Offered By */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
                                 Inserted by <span style={{ color: '#dc3545' }}>*</span>
@@ -448,14 +595,13 @@ function CreateItemForm({ token }) {
                             </select>
                         </div>
 
-                        {/* Two Column Layout */}
+                        {/* Dates */}
                         <div style={{ 
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                             gap: '1.5rem',
                             marginBottom: '1.5rem'
                         }}>
-                            {/* Start Date */}
                             <div>
                                 <label style={labelStyle}>Start Date</label>
                                 <input
@@ -467,7 +613,6 @@ function CreateItemForm({ token }) {
                                 />
                             </div>
 
-                            {/* End Date */}
                             <div>
                                 <label style={labelStyle}>End Date</label>
                                 <input
@@ -480,7 +625,6 @@ function CreateItemForm({ token }) {
                             </div>
                         </div>
 
-                        {/* Expiration Date */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>Expiration Date</label>
                             <input
@@ -505,13 +649,39 @@ function CreateItemForm({ token }) {
                             />
                         </div>
 
-                        {/* ERC Panel and Keyword */}
+                        {/* ERC Area, Panel and Keyword */}
                         <div style={{ 
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                             gap: '1.5rem',
                             marginBottom: '1.5rem'
                         }}>
+                            {/* ERC Area */}
+                            <div>
+                                <label style={labelStyle}>ERC Area</label>
+                                <select
+                                    name="erc_area"
+                                    value={formData.erc_area}
+                                    onChange={handleInputChange}
+                                    style={selectStyle}
+                                >
+                                    <option value="">Select ERC Area</option>
+                                    {ercAreaOptions.map(area => (
+                                        <option key={area.value} value={area.value}>
+                                            {area.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <small style={{ 
+                                    display: 'block',
+                                    marginTop: '0.25rem',
+                                    fontSize: '0.85rem',
+                                    color: '#6c757d'
+                                }}>
+                                    Select area first to filter panels
+                                </small>
+                            </div>
+
                             {/* ERC Panel */}
                             <div>
                                 <label style={labelStyle}>ERC Panel</label>
@@ -519,15 +689,30 @@ function CreateItemForm({ token }) {
                                     name="erc_panel"
                                     value={formData.erc_panel}
                                     onChange={handleInputChange}
-                                    style={selectStyle}
+                                    style={{
+                                        ...selectStyle,
+                                        cursor: !formData.erc_area ? 'not-allowed' : 'pointer',
+                                        opacity: !formData.erc_area ? 0.6 : 1
+                                    }}
+                                    disabled={!formData.erc_area}
                                 >
-                                    <option value="">Select ERC Panel</option>
+                                    <option value="">
+                                        {formData.erc_area ? 'Select ERC Panel' : 'Select area first'}
+                                    </option>
                                     {ercPanels.map(panel => (
-                                        <option key={panel.id} value={panel.id}>
+                                        <option key={panel.documentId} value={panel.documentId}>
                                             {panel.attributes?.name || panel.name}
                                         </option>
                                     ))}
                                 </select>
+                                <small style={{ 
+                                    display: 'block',
+                                    marginTop: '0.25rem',
+                                    fontSize: '0.85rem',
+                                    color: '#6c757d'
+                                }}>
+                                    Select panel to filter keywords
+                                </small>
                             </div>
 
                             {/* ERC Keyword */}
@@ -537,9 +722,16 @@ function CreateItemForm({ token }) {
                                     name="erc_keyword"
                                     value={formData.erc_keyword}
                                     onChange={handleInputChange}
-                                    style={selectStyle}
+                                    style={{
+                                        ...selectStyle,
+                                        cursor: !formData.erc_panel ? 'not-allowed' : 'pointer',
+                                        opacity: !formData.erc_panel ? 0.6 : 1
+                                    }}
+                                    disabled={!formData.erc_panel}
                                 >
-                                    <option value="">Select ERC Keyword</option>
+                                    <option value="">
+                                        {formData.erc_panel ? 'Select ERC Keyword' : 'Select panel first'}
+                                    </option>
                                     {ercKeywords.map(keyword => (
                                         <option key={keyword.id} value={keyword.id}>
                                             {keyword.attributes?.name || keyword.name}
@@ -627,7 +819,7 @@ function CreateItemForm({ token }) {
                             />
                         </div>
 
-                        {/* University (Pre-filled) */}
+                        {/* University */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
                                 University <span style={{ color: '#dc3545' }}>*</span>
@@ -645,7 +837,7 @@ function CreateItemForm({ token }) {
                                 <option value="">Select university</option>
                                 {universities.map(uni => (
                                     <option key={uni.id} value={uni.id}>
-                                        {uni.attributes?.name || uni.name}
+                                        {uni.attributes?.name || uni.university_name}
                                     </option>
                                 ))}
                             </select>
@@ -659,7 +851,7 @@ function CreateItemForm({ token }) {
                             </small>
                         </div>
 
-                        {/* First Level Structure (Pre-filled) */}
+                        {/* First Level Structure */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>First Level Structure</label>
                             <select
@@ -668,12 +860,17 @@ function CreateItemForm({ token }) {
                                 onChange={handleInputChange}
                                 style={{
                                     ...selectStyle,
-                                    backgroundColor: '#f8f9fa'
+                                    backgroundColor: '#f8f9fa',
+                                    cursor: !formData.university ? 'not-allowed' : 'pointer',
+                                    opacity: !formData.university ? 0.6 : 1
                                 }}
+                                disabled={!formData.university}
                             >
-                                <option value="">Select first level structure</option>
+                                <option value="">
+                                    {formData.university ? 'Select first level structure' : 'Select university first'}
+                                </option>
                                 {firstLevelStructures.map(struct => (
-                                    <option key={struct.id} value={struct.id}>
+                                    <option key={struct.documentId} value={struct.documentId}>
                                         {struct.attributes?.name || struct.name}
                                     </option>
                                 ))}
@@ -684,11 +881,11 @@ function CreateItemForm({ token }) {
                                 fontSize: '0.85rem',
                                 color: '#6c757d'
                             }}>
-                                Pre-filled from your profile
+                                {formData.university ? 'Pre-filled from your profile' : 'Select university to enable'}
                             </small>
                         </div>
 
-                        {/* Second Level Structure (Pre-filled) */}
+                        {/* Second Level Structure */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>Second Level Structure</label>
                             <select
@@ -697,10 +894,15 @@ function CreateItemForm({ token }) {
                                 onChange={handleInputChange}
                                 style={{
                                     ...selectStyle,
-                                    backgroundColor: '#f8f9fa'
+                                    backgroundColor: '#f8f9fa',
+                                    cursor: !formData.first_level_structure ? 'not-allowed' : 'pointer',
+                                    opacity: !formData.first_level_structure ? 0.6 : 1
                                 }}
+                                disabled={!formData.first_level_structure || secondLevelStructures.length === 0}
                             >
-                                <option value="">Select second level structure</option>
+                                <option value="">
+                                    {formData.first_level_structure ? 'Select second level structure' : 'Select first level first'}
+                                </option>
                                 {secondLevelStructures.map(struct => (
                                     <option key={struct.id} value={struct.id}>
                                         {struct.attributes?.name || struct.name}
@@ -713,7 +915,7 @@ function CreateItemForm({ token }) {
                                 fontSize: '0.85rem',
                                 color: '#6c757d'
                             }}>
-                                Pre-filled from your profile
+                                {formData.first_level_structure ? 'Pre-filled from your profile' : 'Select first level structure to enable'}
                             </small>
                         </div>
 
@@ -740,7 +942,7 @@ function CreateItemForm({ token }) {
                             )}
                         </div>
 
-                        {/* Submit Button */}
+                        {/* Submit Buttons */}
                         <div style={{ 
                             display: 'flex',
                             gap: '1rem',
