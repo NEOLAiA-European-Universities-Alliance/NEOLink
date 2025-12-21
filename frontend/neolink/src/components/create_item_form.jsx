@@ -299,84 +299,13 @@ function CreateItemForm({ token }) {
         setSubmitting(true);
         setError(null);
 
-        try {
-            const submitData = new FormData();
-            
-            const decoded = jwtDecode(token);
-            const userId = decoded.sub || decoded.id || decoded.user_id || decoded.userId;
-            
-            console.log("Submitting with user_id:", userId);
-            submitData.append('data[user_id]', userId);
-            
-            Object.keys(formData).forEach(key => {
-                if (formData[key] !== null && formData[key] !== '') {
-                    if (key === 'cover' && formData[key]) {
-                        submitData.append('files.cover', formData[key]);
-                    } else if (key !== 'cover') {
-                        submitData.append(`data[${key}]`, formData[key]);
-                    }
-                }
-            });
-
-            console.log("Form data being sent:");
-            for (let pair of submitData.entries()) {
-                console.log(pair[0], pair[1]);
-            }
-
-            const response = await axios.post(
-                `${base_url}/items`,
-                submitData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    }
-                }
-            );
-
-            console.log("Response:", response.data);
+        // Show festive message instead of submitting
+        setTimeout(() => {
             setSuccess(true);
             setSubmitting(false);
-            
-            setTimeout(() => {
-                setSuccess(false);
-                const universityId = userData?.university_id || userData?.university_name || '';
-                const firstLevelId = userData?.first_level_structure_id || userData?.first_level_structure || '';
-                const secondLevelId = userData?.second_level_structure_id || userData?.second_level_structure || '';
-                const fullName = userData?.full_name || userData?.fullName || userData?.name || '';
-                
-                setFormData({
-                    item_status: 'active',
-                    name: '',
-                    description: '',
-                    category_id: '',
-                    expiration: '',
-                    isced_code: '',
-                    erc_area: '',
-                    erc_panel: '',
-                    erc_keyword: '',
-                    start_date: '',
-                    learning_outcomes: '',
-                    multimediarial_material_provided: '',
-                    end_date: '',
-                    languages: '',
-                    speakers: '',
-                    pedagogical_objectives: '',
-                    level_of_study: '',
-                    university: universityId,
-                    first_level_structure: firstLevelId,
-                    second_level_structure: secondLevelId,
-                    offered_by: fullName ? formatName(fullName) : '',
-                    cover: null
-                });
-            }, 2000);
-
-        } catch (err) {
-            console.error("Error submitting form:", err);
-            console.error("Error response:", err.response?.data);
-            setError(err.response?.data?.error?.message || "Failed to create item. Please try again.");
-            setSubmitting(false);
-        }
+            // Scroll to top to show the message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 500);
     };
 
     if (loading) {
@@ -415,6 +344,23 @@ function CreateItemForm({ token }) {
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
+                }
+                @keyframes snowfall {
+                    0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { transform: translateY(400px) rotate(360deg); opacity: 0; }
+                }
+                @keyframes shimmer {
+                    0%, 100% { opacity: 0.8; }
+                    50% { opacity: 1; }
+                }
+                .snowflake {
+                    position: absolute;
+                    color: #fff;
+                    font-size: 1.5em;
+                    animation: snowfall linear infinite;
+                    pointer-events: none;
                 }
             `}</style>
             
@@ -458,14 +404,80 @@ function CreateItemForm({ token }) {
             }}>
                 {success && (
                     <div style={{
-                        padding: '1rem',
-                        backgroundColor: '#d1e7dd',
-                        border: '1px solid #badbcc',
-                        borderRadius: '8px',
+                        position: 'relative',
+                        padding: '2.5rem 2rem',
+                        background: 'linear-gradient(135deg, #c41e3a 0%, #165b33 100%)',
+                        border: '3px solid #ffd700',
+                        borderRadius: '16px',
                         marginBottom: '1.5rem',
-                        color: '#0f5132'
+                        color: 'white',
+                        textAlign: 'center',
+                        boxShadow: '0 8px 32px rgba(196, 30, 58, 0.3)',
+                        overflow: 'hidden'
                     }}>
-                        ✓ Item created successfully!
+                        {/* Snowflakes */}
+                        {[...Array(15)].map((_, i) => (
+                            <span 
+                                key={i}
+                                className="snowflake"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    animationDuration: `${3 + Math.random() * 4}s`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    fontSize: `${0.8 + Math.random() * 0.7}em`
+                                }}
+                            >
+                                ❄
+                            </span>
+                        ))}
+                        
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            <div style={{ 
+                                fontSize: '3.5rem', 
+                                marginBottom: '1rem',
+                                animation: 'shimmer 2s ease-in-out infinite'
+                            }}>
+                                🎄 ✨ 🎁
+                            </div>
+                            <h2 style={{ 
+                                fontSize: '1.75rem', 
+                                fontWeight: '700',
+                                marginBottom: '1rem',
+                                textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+                            }}>
+                                Ho Ho Hold On! 🎅
+                            </h2>
+                            <p style={{ 
+                                fontSize: '1.2rem',
+                                lineHeight: '1.6',
+                                marginBottom: '0.5rem',
+                                textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                            }}>
+                                It's still a bit early for this feature...
+                            </p>
+                            <p style={{ 
+                                fontSize: '1.35rem',
+                                fontWeight: '600',
+                                marginTop: '1.5rem',
+                                textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+                            }}>
+                                In the meantime, we wish you a<br/>
+                                <span style={{ 
+                                    fontSize: '1.5rem',
+                                    color: '#ffd700',
+                                    fontWeight: '700'
+                                }}>
+                                    Merry Christmas! 🎅🎄
+                                </span>
+                            </p>
+                            <p style={{ 
+                                fontSize: '1rem',
+                                marginTop: '1rem',
+                                opacity: 0.95
+                            }}>
+                                May your holidays be filled with joy and wonder! ⭐
+                            </p>
+                        </div>
                     </div>
                 )}
 
@@ -577,13 +589,12 @@ function CreateItemForm({ token }) {
                         {/* Category */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
-                                Category <span style={{ color: '#dc3545' }}>*</span>
+                                Category 
                             </label>
                             <select
                                 name="category_id"
                                 value={formData.category_id}
                                 onChange={handleInputChange}
-                                required
                                 style={selectStyle}
                             >
                                 <option value="">Select a category</option>
