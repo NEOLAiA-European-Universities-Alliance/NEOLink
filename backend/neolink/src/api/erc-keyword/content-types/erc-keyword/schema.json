@@ -12,10 +12,13 @@
   "pluginOptions": {},
   "attributes": {
     "name": {
-      "type": "text"
+      "type": "string"
     },
     "erc_panel": {
-      "type": "integer"
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::erc-panel.erc-panel",
+      "inversedBy": "erc_keywords"
     }
   }
 }

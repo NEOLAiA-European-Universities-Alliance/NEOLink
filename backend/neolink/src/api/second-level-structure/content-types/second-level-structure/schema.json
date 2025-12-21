@@ -15,7 +15,9 @@
       "type": "string"
     },
     "first_level_structure": {
-      "type": "integer"
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::first-level-structure.first-level-structure"
     }
   }
 }

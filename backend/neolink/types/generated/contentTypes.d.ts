@@ -444,14 +444,17 @@ export interface ApiErcKeywordErcKeyword extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    erc_panel: Schema.Attribute.Integer;
+    erc_panel: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::erc-panel.erc-panel'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::erc-keyword.erc-keyword'
     > &
       Schema.Attribute.Private;
-    name: Schema.Attribute.Text;
+    name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -473,6 +476,17 @@ export interface ApiErcPanelErcPanel extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    erc_area: Schema.Attribute.Enumeration<
+      [
+        'Physical Sciences and Engineering (PE)',
+        'Life Sciences (LS)',
+        'Social Sciences and Humanities (SH)',
+      ]
+    >;
+    erc_keywords: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::erc-keyword.erc-keyword'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -639,7 +653,10 @@ export interface ApiSecondLevelStructureSecondLevelStructure
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    first_level_structure: Schema.Attribute.Integer;
+    first_level_structure: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::first-level-structure.first-level-structure'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',

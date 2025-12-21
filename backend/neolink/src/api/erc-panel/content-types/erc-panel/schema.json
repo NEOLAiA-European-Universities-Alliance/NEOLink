@@ -13,6 +13,20 @@
   "attributes": {
     "name": {
       "type": "text"
+    },
+    "erc_area": {
+      "type": "enumeration",
+      "enum": [
+        "Physical Sciences and Engineering (PE)",
+        "Life Sciences (LS)",
+        "Social Sciences and Humanities (SH)"
+      ]
+    },
+    "erc_keywords": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::erc-keyword.erc-keyword",
+      "mappedBy": "erc_panel"
     }
   }
 }
