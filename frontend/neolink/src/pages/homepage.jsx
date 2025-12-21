@@ -1,8 +1,8 @@
 import Button from 'react-bootstrap/Button';
 import { Container, Row, Col } from 'react-bootstrap';
-const logo_neolaia = "/logoNEOLAiA.png";
-const eu_logo = "/eu_logo.png";
-const logo_neolink = "/logo.png";
+const logo_neolaia = `${import.meta.env.BASE_URL}logoNEOLAiA.png`;
+const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
+const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 import { Link } from 'react-router-dom';
 
 function Homepage(){

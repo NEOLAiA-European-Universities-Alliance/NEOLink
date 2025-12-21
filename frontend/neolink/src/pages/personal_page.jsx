@@ -1,9 +1,8 @@
 import { jwtDecode } from "jwt-decode";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-const logo_neolink = "/logo.png";
-const logo_neolaia = "/logoNEOLAiA.png";
-const eu_logo = "/eu_logo.png";
+const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
+const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 
 function PersonalPage() {
     const [userData, setUserData] = useState(null);

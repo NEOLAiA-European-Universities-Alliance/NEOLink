@@ -6,9 +6,9 @@ import PrivacyPolicy from "../components/privacy_policy";
 import AcceptPolicy from "../components/accept_policy";
 import { useNavigate } from "react-router-dom";
 
-const logo_neolaia = "/logoNEOLAiA.png";
-const eu_logo = "/eu_logo.png";
-const logo_neolink = "/logo.png";
+const logo_neolaia = `${import.meta.env.BASE_URL}logoNEOLAiA.png`;
+const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
+const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 
 function Login(){
     const authContext = useContext(AuthContext);
