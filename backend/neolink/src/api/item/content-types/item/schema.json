@@ -34,9 +34,6 @@
     "isced_code": {
       "type": "string"
     },
-    "erc_panel": {
-      "type": "integer"
-    },
     "erc_keyword": {
       "type": "integer"
     },
@@ -67,24 +64,30 @@
     "university": {
       "type": "integer"
     },
-    "first_level_structure": {
-      "type": "integer"
-    },
     "second_level_structure": {
       "type": "integer"
     },
-    "cover": {
-      "type": "media",
-      "multiple": false,
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ]
-    },
     "seller_name": {
       "type": "string"
+    },
+    "discourse_group_id": {
+      "type": "integer"
+    },
+    "discourse_category_id": {
+      "type": "integer"
+    },
+    "erc_panel": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::erc-panel.erc-panel"
+    },
+    "first_level_structure": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::first-level-structure.first-level-structure"
+    },
+    "coverId": {
+      "type": "integer"
     }
   }
 }

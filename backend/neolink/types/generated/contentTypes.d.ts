@@ -605,16 +605,24 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
   };
   attributes: {
     category_id: Schema.Attribute.Integer;
-    cover: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
+    coverId: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     description: Schema.Attribute.Text;
+    discourse_category_id: Schema.Attribute.Integer;
+    discourse_group_id: Schema.Attribute.Integer;
     end_date: Schema.Attribute.Date;
     erc_keyword: Schema.Attribute.Integer;
-    erc_panel: Schema.Attribute.Integer;
+    erc_panel: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::erc-panel.erc-panel'
+    >;
     expiration: Schema.Attribute.Date;
-    first_level_structure: Schema.Attribute.Integer;
+    first_level_structure: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::first-level-structure.first-level-structure'
+    >;
     isced_code: Schema.Attribute.String;
     item_status: Schema.Attribute.Enumeration<['active', 'running', 'expired']>;
     languages: Schema.Attribute.String;
