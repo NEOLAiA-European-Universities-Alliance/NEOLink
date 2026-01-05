@@ -7,31 +7,31 @@ const logo_neolaia = `${import.meta.env.BASE_URL}logoNEOLAiA.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 
-function CreateItemForm({ token }) {
+function CreateItemForm({ token, initialData, onNext }) {
     const [userData, setUserData] = useState(null);
     const [formData, setFormData] = useState({
-        item_status: 'active',
-        name: '',
-        description: '',
-        category_id: '',
-        expiration: '',
-        isced_code: '',
-        erc_area: '',
-        erc_panel: '',
-        erc_keyword: '',
-        start_date: '',
-        learning_outcomes: '',
-        multimediarial_material_provided: '',
-        end_date: '',
-        languages: '',
-        speakers: '',
-        pedagogical_objectives: '',
-        level_of_study: '',
-        university: '',
-        first_level_structure: '',
-        second_level_structure: '',
-        offered_by: '',
-        cover: null
+        item_status: initialData?.item_status || 'active',
+        name: initialData?.name || '',
+        description: initialData?.description || '',
+        category_id: initialData?.category_id || '',
+        expiration: initialData?.expiration || '',
+        isced_code: initialData?.isced_code || '',
+        erc_area: initialData?.erc_area || '',
+        erc_panel: initialData?.erc_panel || '',
+        erc_keyword: initialData?.erc_keyword || '',
+        start_date: initialData?.start_date || '',
+        learning_outcomes: initialData?.learning_outcomes || '',
+        multimediarial_material_provided: initialData?.multimediarial_material_provided || '',
+        end_date: initialData?.end_date || '',
+        languages: initialData?.languages || '',
+        speakers: initialData?.speakers || '',
+        pedagogical_objectives: initialData?.pedagogical_objectives || '',
+        level_of_study: initialData?.level_of_study || '',
+        university: initialData?.university || '',
+        first_level_structure: initialData?.first_level_structure || '',
+        second_level_structure: initialData?.second_level_structure || '',
+        offered_by: initialData?.offered_by || '',
+        cover: initialData?.cover || null,
     });
 
     // Dropdown options from database
@@ -43,9 +43,7 @@ function CreateItemForm({ token }) {
     const [categories, setCategories] = useState([]);
     
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
 
     // Item status options
     const itemStatusOptions = [
@@ -92,20 +90,23 @@ function CreateItemForm({ token }) {
                 setUniversities(universitiesRes.data.data || universitiesRes.data || []);
                 setCategories(categoriesRes.data.data || categoriesRes.data || []);
 
-                const universityId = decoded.university_id || decoded.university || decoded.universityId || '';
-                const firstLevelId = decoded.first_level_structure_id || decoded.first_level_structure || decoded.firstLevelStructure || '';
-                const secondLevelId = decoded.second_level_structure_id || decoded.second_level_structure || decoded.secondLevelStructure || '';
-                const fullName = decoded.full_name || decoded.fullName || decoded.name || '';
+                // Only set from token if initialData doesn't have values
+                if (!initialData?.university) {
+                    const universityId = decoded.university_id || decoded.university || decoded.universityId || '';
+                    const firstLevelId = decoded.first_level_structure_id || decoded.first_level_structure || decoded.firstLevelStructure || '';
+                    const secondLevelId = decoded.second_level_structure_id || decoded.second_level_structure || decoded.secondLevelStructure || '';
+                    const fullName = decoded.full_name || decoded.fullName || decoded.name || '';
 
-                console.log("Pre-filling with:", { universityId, firstLevelId, secondLevelId, fullName });
+                    console.log("Pre-filling with:", { universityId, firstLevelId, secondLevelId, fullName });
 
-                setFormData(prev => ({
-                    ...prev,
-                    university: universityId,
-                    first_level_structure: firstLevelId,
-                    second_level_structure: secondLevelId,
-                    offered_by: fullName ? formatName(fullName) : ''
-                }));
+                    setFormData(prev => ({
+                        ...prev,
+                        university: universityId,
+                        first_level_structure: firstLevelId,
+                        second_level_structure: secondLevelId,
+                        offered_by: fullName ? formatName(fullName) : ''
+                    }));
+                }
 
                 setLoading(false);
             } catch (err) {
@@ -138,7 +139,7 @@ function CreateItemForm({ token }) {
                             setFormData(prev => ({
                                 ...prev,
                                 first_level_structure: '',
-                                second_level_structure: '' // Also reset second level
+                                second_level_structure: ''
                             }));
                         }
                     }
@@ -166,12 +167,10 @@ function CreateItemForm({ token }) {
                 try {
                     const response = await axios.get(
                         `${base_url}/second-level-structures?filters[first_level_structure][documentId][$eq]=${formData.first_level_structure}&populate=first_level_structure`
-                        
                     );
                     setSecondLevelStructures(response.data.data || response.data || []);
                     console.log("Second level structures:", response.data);
                     
-                    // Reset second_level_structure if it's not valid for the new first level
                     if (formData.second_level_structure) {
                         const isValid = (response.data.data || response.data || [])
                             .some(struct => struct.id === formData.second_level_structure);
@@ -188,7 +187,6 @@ function CreateItemForm({ token }) {
                 }
             } else {
                 setSecondLevelStructures([]);
-                // Clear second_level_structure if no first level is selected
                 setFormData(prev => ({
                     ...prev,
                     second_level_structure: ''
@@ -210,7 +208,6 @@ function CreateItemForm({ token }) {
                     console.log("ERC Panels for area", formData.erc_area, ":", response.data);
                     setErcPanels(response.data.data || response.data || []);
                     
-                    // Reset erc_panel if it's not valid for the new area
                     if (formData.erc_panel) {
                         const isValid = (response.data.data || response.data || [])
                             .some(panel => panel.documentId === formData.erc_panel);
@@ -218,7 +215,7 @@ function CreateItemForm({ token }) {
                             setFormData(prev => ({
                                 ...prev,
                                 erc_panel: '',
-                                erc_keyword: '' // Also reset keyword when panel is reset
+                                erc_keyword: ''
                             }));
                         }
                     }
@@ -228,7 +225,6 @@ function CreateItemForm({ token }) {
                 }
             } else {
                 setErcPanels([]);
-                // Clear erc_panel and erc_keyword if no area is selected
                 setFormData(prev => ({
                     ...prev,
                     erc_panel: '',
@@ -251,7 +247,6 @@ function CreateItemForm({ token }) {
                     console.log("ERC Keywords for panel", formData.erc_panel, ":", response.data);
                     setErcKeywords(response.data.data || response.data || []);
                     
-                    // Reset erc_keyword if it's not valid for the new panel
                     if (formData.erc_keyword) {
                         const isValid = (response.data.data || response.data || [])
                             .some(keyword => keyword.id === formData.erc_keyword);
@@ -268,7 +263,6 @@ function CreateItemForm({ token }) {
                 }
             } else {
                 setErcKeywords([]);
-                // Clear erc_keyword if no panel is selected
                 setFormData(prev => ({
                     ...prev,
                     erc_keyword: ''
@@ -294,18 +288,10 @@ function CreateItemForm({ token }) {
         }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setSubmitting(true);
-        setError(null);
-
-        // Show festive message instead of submitting
-        setTimeout(() => {
-            setSuccess(true);
-            setSubmitting(false);
-            // Scroll to top to show the message
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 500);
+        // Pass form data to parent and move to step 2
+        onNext(formData);
     };
 
     if (loading) {
@@ -345,23 +331,6 @@ function CreateItemForm({ token }) {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
-                @keyframes snowfall {
-                    0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
-                    10% { opacity: 1; }
-                    90% { opacity: 1; }
-                    100% { transform: translateY(400px) rotate(360deg); opacity: 0; }
-                }
-                @keyframes shimmer {
-                    0%, 100% { opacity: 0.8; }
-                    50% { opacity: 1; }
-                }
-                .snowflake {
-                    position: absolute;
-                    color: #fff;
-                    font-size: 1.5em;
-                    animation: snowfall linear infinite;
-                    pointer-events: none;
-                }
             `}</style>
             
             {/* Header */}
@@ -394,6 +363,71 @@ function CreateItemForm({ token }) {
                 </div>
             </div>
 
+            {/* Progress Indicator */}
+            <div style={{
+                backgroundColor: 'white',
+                borderBottom: '1px solid #dee2e6',
+                padding: '1rem 0'
+            }}>
+                <div style={{
+                    maxWidth: '1000px',
+                    margin: '0 auto',
+                    padding: '0 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '1rem'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            backgroundColor: '#7c6fd6',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '600'
+                        }}>
+                            1
+                        </div>
+                        <span style={{ color: '#7c6fd6', fontWeight: '600' }}>Basic Info</span>
+                    </div>
+                    
+                    <div style={{
+                        width: '60px',
+                        height: '2px',
+                        backgroundColor: '#dee2e6'
+                    }}></div>
+                    
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            backgroundColor: '#dee2e6',
+                            color: '#6c757d',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '600'
+                        }}>
+                            2
+                        </div>
+                        <span style={{ color: '#6c757d', fontWeight: '500' }}>Virtual Cafè Settings</span>
+                    </div>
+                </div>
+            </div>
+
             {/* Main Content */}
             <div style={{ 
                 flex: 1,
@@ -402,85 +436,6 @@ function CreateItemForm({ token }) {
                 width: '100%',
                 margin: '0 auto'
             }}>
-                {success && (
-                    <div style={{
-                        position: 'relative',
-                        padding: '2.5rem 2rem',
-                        background: 'linear-gradient(135deg, #c41e3a 0%, #165b33 100%)',
-                        border: '3px solid #ffd700',
-                        borderRadius: '16px',
-                        marginBottom: '1.5rem',
-                        color: 'white',
-                        textAlign: 'center',
-                        boxShadow: '0 8px 32px rgba(196, 30, 58, 0.3)',
-                        overflow: 'hidden'
-                    }}>
-                        {/* Snowflakes */}
-                        {[...Array(15)].map((_, i) => (
-                            <span 
-                                key={i}
-                                className="snowflake"
-                                style={{
-                                    left: `${Math.random() * 100}%`,
-                                    animationDuration: `${3 + Math.random() * 4}s`,
-                                    animationDelay: `${Math.random() * 2}s`,
-                                    fontSize: `${0.8 + Math.random() * 0.7}em`
-                                }}
-                            >
-                                ❄
-                            </span>
-                        ))}
-                        
-                        <div style={{ position: 'relative', zIndex: 1 }}>
-                            <div style={{ 
-                                fontSize: '3.5rem', 
-                                marginBottom: '1rem',
-                                animation: 'shimmer 2s ease-in-out infinite'
-                            }}>
-                                🎄 ✨ 🎁
-                            </div>
-                            <h2 style={{ 
-                                fontSize: '1.75rem', 
-                                fontWeight: '700',
-                                marginBottom: '1rem',
-                                textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
-                            }}>
-                                Ho Ho Hold On! 🎅
-                            </h2>
-                            <p style={{ 
-                                fontSize: '1.2rem',
-                                lineHeight: '1.6',
-                                marginBottom: '0.5rem',
-                                textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
-                            }}>
-                                It's still a bit early for this feature...
-                            </p>
-                            <p style={{ 
-                                fontSize: '1.35rem',
-                                fontWeight: '600',
-                                marginTop: '1.5rem',
-                                textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
-                            }}>
-                                In the meantime, we wish you a<br/>
-                                <span style={{ 
-                                    fontSize: '1.5rem',
-                                    color: '#ffd700',
-                                    fontWeight: '700'
-                                }}>
-                                    Merry Christmas! 🎅🎄
-                                </span>
-                            </p>
-                            <p style={{ 
-                                fontSize: '1rem',
-                                marginTop: '1rem',
-                                opacity: 0.95
-                            }}>
-                                May your holidays be filled with joy and wonder! ⭐
-                            </p>
-                        </div>
-                    </div>
-                )}
-
                 {error && (
                     <div style={{
                         padding: '1rem',
@@ -501,13 +456,20 @@ function CreateItemForm({ token }) {
                     padding: '2rem'
                 }}>
                     <h2 style={{ 
-                        marginBottom: '2rem',
+                        marginBottom: '0.5rem',
                         color: '#213547',
                         fontSize: '1.75rem',
                         fontWeight: '600'
                     }}>
                         Create New Item
                     </h2>
+                    <p style={{
+                        marginBottom: '2rem',
+                        color: '#6c757d',
+                        fontSize: '0.95rem'
+                    }}>
+                        Fill in the basic information for your item (Step 1 of 2)
+                    </p>
 
                     <form onSubmit={handleSubmit}>
                         {/* Item Status */}
@@ -953,11 +915,11 @@ function CreateItemForm({ token }) {
                             )}
                         </div>
 
-                        {/* Submit Buttons */}
+                        {/* Navigation Buttons */}
                         <div style={{ 
                             display: 'flex',
                             gap: '1rem',
-                            justifyContent: 'flex-end'
+                            justifyContent: 'space-between'
                         }}>
                             <button
                                 type="button"
@@ -984,33 +946,28 @@ function CreateItemForm({ token }) {
                             </button>
                             <button
                                 type="submit"
-                                disabled={submitting}
                                 style={{
                                     padding: '0.75rem 2rem',
-                                    background: submitting 
-                                        ? '#9b8fd6' 
-                                        : 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
+                                    background: 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
                                     fontSize: '1rem',
                                     fontWeight: '600',
-                                    cursor: submitting ? 'not-allowed' : 'pointer',
+                                    cursor: 'pointer',
                                     transition: 'all 0.3s',
                                     boxShadow: '0 2px 4px rgba(124, 111, 214, 0.2)'
                                 }}
                                 onMouseEnter={(e) => {
-                                    if (!submitting) {
-                                        e.target.style.transform = 'translateY(-2px)';
-                                        e.target.style.boxShadow = '0 4px 12px rgba(124, 111, 214, 0.4)';
-                                    }
+                                    e.target.style.transform = 'translateY(-2px)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(124, 111, 214, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
                                     e.target.style.transform = 'translateY(0)';
                                     e.target.style.boxShadow = '0 2px 4px rgba(124, 111, 214, 0.2)';
                                 }}
                             >
-                                {submitting ? 'Creating...' : 'Create Item'}
+                                Next Step →
                             </button>
                         </div>
                     </form>

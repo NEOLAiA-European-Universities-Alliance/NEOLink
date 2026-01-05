@@ -39,6 +39,18 @@ function PersonalPage() {
         }
     }, [token, navigate]);
 
+    useEffect(() => {        
+        // Check on mount and periodically
+        const checkToken = async () => {
+            if (!token_is_valid()) {
+                localStorage.removeItem("token");
+                navigate("/login");
+            }
+        };
+        const interval = setInterval(checkToken, 60000); // every minute
+        return () => clearInterval(interval);
+    }, [token, navigate]);
+
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/login");
