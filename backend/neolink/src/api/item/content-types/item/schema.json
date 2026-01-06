@@ -34,9 +34,6 @@
     "isced_code": {
       "type": "string"
     },
-    "erc_keyword": {
-      "type": "integer"
-    },
     "start_date": {
       "type": "date"
     },
@@ -88,6 +85,19 @@
     },
     "coverId": {
       "type": "integer"
+    },
+    "erc_keyword": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::erc-keyword.erc-keyword"
+    },
+    "erc_area": {
+      "type": "enumeration",
+      "enum": [
+        "Physical Sciences and Engineering (PE)",
+        "Life Sciences (LS)",
+        "Social Sciences and Humanities (SH)"
+      ]
     }
   }
 }
