@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 module.exports = {
     async create(ctx, next){
@@ -42,7 +41,7 @@ module.exports = {
                 const group_payload = {
                     name: group_name_sanitazed,
                     full_name: group_display_name || group_name,
-                    visibility_level: 0, // 0=public, 1=logged in, 2=members, 3=staff, 4=owners
+                    visibility_level: 0,
                     bio_raw: group_description || "",
                     public_admission: false,
                     public_exit: true,
@@ -102,7 +101,7 @@ module.exports = {
                     isced_code,
                     erc_area,
                     erc_panel,
-                    erc_keyword: erc_keyword ? parseInt(erc_keyword) : null,
+                    erc_keyword: erc_keyword,
                     start_date,
                     learning_outcomes,
                     multimedial_material_provided : multimediarial_material_provided,
@@ -133,7 +132,8 @@ module.exports = {
             });
             return ctx.response.created(entry);
             } catch (error){
-                    console.log("Error creating Discourse group and category: " + error);
+                console.log("Error creating Discourse group and category: " + error);
+                throw error;
             }
         } catch (error){
             console.log(error);
