@@ -1,5 +1,6 @@
 const axios = require('axios');
 const seller = require('../../seller/controllers/seller');
+const crypto = require('crypto');
 module.exports = {
     async create(ctx, next){
         try{
@@ -23,21 +24,43 @@ module.exports = {
                 if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
                     virtual_cafe_username = virtual_cafe_profile[0].username || "";
                 } else {
-                    const user_payload = {
-                        name: offered_by,
+                    // User doesn't exist, create user via Discourse Connect                    
+                    const username = email.split('@')[0];
+                    
+                    const ssoPayload = new URLSearchParams({
+                        external_id: user_id, 
                         email: email,
-                        username: email.split('@')[0],
-                        password: Math.random().toString(36).slice(-8),
-                        active: true,
-                        approved: true
-                    };
-                    const response_user = await axios.post(`${process.env.DISCOURSE_URL}/users.json`, user_payload, {
-                        headers: {
-                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                            'Api-Username': 'system'
-                        }
+                        username: username,
+                        name: offered_by,
+                        require_activation: 'false',
                     });
-                    virtual_cafe_username = email.split('@')[0]
+
+                    const base64Payload = Buffer.from(ssoPayload.toString()).toString('base64');
+                    const signature = crypto
+                        .createHmac('sha256', process.env.DISCOURSE_CONNECT_SECRET)
+                        .update(base64Payload)
+                        .digest('hex');
+
+                    try {
+                        const syncResponse = await axios.post(
+                            `${process.env.DISCOURSE_URL}/admin/users/sync_sso`,
+                            {
+                                sso: base64Payload,
+                                sig: signature
+                            },
+                            {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system',
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+                        console.log('User synced successfully:', syncResponse.data);
+                        virtual_cafe_username = username;
+                }  catch (syncError) {
+                        console.error('Error syncing user via Discourse Connect:', syncError.response?.data || syncError.message);
+                    }
                 }
                 let group_name_sanitazed = group_name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '');
                 const group_payload = {
