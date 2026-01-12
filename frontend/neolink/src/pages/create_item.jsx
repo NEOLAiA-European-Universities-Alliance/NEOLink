@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import CategorySelection from "../components/category_selection.jsx";
 import CreateItemFormStep1 from "../components/create_item_form.jsx";
 import CreateItemFormStep2 from "../components/discourse_setting.jsx";
 import axios from "axios";
@@ -11,12 +12,15 @@ function CreateItem() {
     const navigate = useNavigate();
     const token = location.state?.token || localStorage.getItem("token");
     
-    // Track current step
-    const [currentStep, setCurrentStep] = useState(1);
+    // Track current step (now starting from 0)
+    const [currentStep, setCurrentStep] = useState(0);
+    
+    // Store selected category
+    const [selectedCategory, setSelectedCategory] = useState(null);
     
     // Store all form data across steps
     const [formData, setFormData] = useState({
-        // Step 1 fields
+        // Step 1 fields (now step 0 is category selection)
         item_status: 'active',
         name: '',
         description: '',
@@ -64,7 +68,19 @@ function CreateItem() {
         return () => clearInterval(interval);
     }, [token, navigate]);
 
-    // Handle moving to next step
+    // Handle category selection (Step 0)
+    const handleCategorySelect = (category) => {
+        setSelectedCategory(category);
+        const categoryId = category.documentId || category.id;
+        setFormData(prev => ({
+            ...prev,
+            item_category: categoryId
+        }));
+        setCurrentStep(1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Handle moving from step 1 to step 2
     const handleNextStep = (stepData) => {
         setFormData(prev => ({
             ...prev,
@@ -74,7 +90,13 @@ function CreateItem() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Handle going back to previous step
+    // Handle going back from step 1 to step 0
+    const handleBackToCategory = () => {
+        setCurrentStep(0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Handle going back from step 2 to step 1
     const handlePreviousStep = () => {
         setCurrentStep(1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -113,9 +135,9 @@ function CreateItem() {
         } catch (error) {
             console.error("Submission failed:", error);
             if (error.response && error.response.data) {
-                setErrorMessage(error.response.data);
+                // Error will be handled in the step 2 component
             } else {
-                setErrorMessage("An unexpected error occurred. Please try again.");
+                console.error("An unexpected error occurred. Please try again.");
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
@@ -124,18 +146,26 @@ function CreateItem() {
         }
     };
 
-
     if (!token) {
         return null;
     }
 
     return (
         <>
+            {currentStep === 0 && (
+                <CategorySelection 
+                    token={token}
+                    onNext={handleCategorySelect}
+                    initialCategory={selectedCategory}
+                />
+            )}
             {currentStep === 1 && (
                 <CreateItemFormStep1 
                     token={token}
                     initialData={formData}
+                    selectedCategory={selectedCategory}
                     onNext={handleNextStep}
+                    onBack={handleBackToCategory}
                 />
             )}
             {currentStep === 2 && (

@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { base_url } from "../api";
+import { shouldShowField, getCategoryFieldDescription } from "../category_field_config";
 
-const logo_neolaia = `${import.meta.env.BASE_URL}logoNEOLAiA.png`;
-const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
+const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 
-function CreateItemForm({ token, initialData, onNext }) {
+function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }) {
     const [userData, setUserData] = useState(null);
     const [formData, setFormData] = useState({
         item_status: initialData?.item_status || 'active',
@@ -34,13 +34,15 @@ function CreateItemForm({ token, initialData, onNext }) {
         cover: initialData?.cover || null,
     });
 
+    // Get category name for field visibility checks
+    const categoryName = selectedCategory?.attributes?.name || selectedCategory?.name || '';
+
     // Dropdown options from database
     const [universities, setUniversities] = useState([]);
     const [firstLevelStructures, setFirstLevelStructures] = useState([]);
     const [secondLevelStructures, setSecondLevelStructures] = useState([]);
     const [ercPanels, setErcPanels] = useState([]);
     const [ercKeywords, setErcKeywords] = useState([]);
-    const [categories, setCategories] = useState([]);
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -69,7 +71,7 @@ function CreateItemForm({ token, initialData, onNext }) {
             .join(' ');
     };
 
-    // Initial load - without dependent dropdowns (loaded separately)
+    // Initial load
     useEffect(() => {
         const initializeForm = async () => {
             try {
@@ -77,18 +79,12 @@ function CreateItemForm({ token, initialData, onNext }) {
                 console.log("Decoded token:", decoded);
                 setUserData(decoded);
 
-                const [
-                    universitiesRes,
-                    categoriesRes
-                ] = await Promise.all([
-                    axios.get(`${base_url}/universities`),
-                    axios.get(`${base_url}/item-categories`)
+                const [universitiesRes] = await Promise.all([
+                    axios.get(`${base_url}/universities`)
                 ]);
 
                 console.log("Universities:", universitiesRes.data);
-
                 setUniversities(universitiesRes.data.data || universitiesRes.data || []);
-                setCategories(categoriesRes.data.data || categoriesRes.data || []);
 
                 // Only set from token if initialData doesn't have values
                 if (!initialData?.university) {
@@ -130,7 +126,6 @@ function CreateItemForm({ token, initialData, onNext }) {
                         `${base_url}/first-level-structures?filters[university][documentId][$eq]=${formData.university}`
                     );
                     setFirstLevelStructures(response.data.data || response.data || []);
-                    console.log("First level structures:", response.data);
                     
                     if (formData.first_level_structure) {
                         const isValid = (response.data.data || response.data || [])
@@ -169,7 +164,6 @@ function CreateItemForm({ token, initialData, onNext }) {
                         `${base_url}/second-level-structures?filters[first_level_structure][documentId][$eq]=${formData.first_level_structure}&populate=first_level_structure`
                     );
                     setSecondLevelStructures(response.data.data || response.data || []);
-                    console.log("Second level structures:", response.data);
                     
                     if (formData.second_level_structure) {
                         const isValid = (response.data.data || response.data || [])
@@ -205,7 +199,6 @@ function CreateItemForm({ token, initialData, onNext }) {
                     const response = await axios.get(
                         `${base_url}/custom-erc-panel/?erc_area=${formData.erc_area}`
                     );
-                    console.log("ERC Panels for area", formData.erc_area, ":", response.data);
                     setErcPanels(response.data.data || response.data || []);
                     
                     if (formData.erc_panel) {
@@ -244,7 +237,6 @@ function CreateItemForm({ token, initialData, onNext }) {
                     const response = await axios.get(
                         `${base_url}/erc-keywords?filters[erc_panel][documentId][$eq]=${formData.erc_panel}&populate=erc_panel`
                     );
-                    console.log("ERC Keywords for panel", formData.erc_panel, ":", response.data);
                     setErcKeywords(response.data.data || response.data || []);
                     
                     if (formData.erc_keyword) {
@@ -290,7 +282,7 @@ function CreateItemForm({ token, initialData, onNext }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Pass form data to parent and move to step 2
+        // Pass form data to parent and move to step 3
         onNext(formData);
     };
 
@@ -370,14 +362,42 @@ function CreateItemForm({ token, initialData, onNext }) {
                 padding: '1rem 0'
             }}>
                 <div style={{
-                    maxWidth: '1000px',
+                    maxWidth: '1200px',
                     margin: '0 auto',
                     padding: '0 1rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '1rem'
+                    gap: '0.75rem',
+                    flexWrap: 'wrap'
                 }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}>
+                        <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '600'
+                        }}>
+                            ✓
+                        </div>
+                        <span style={{ color: '#28a745', fontWeight: '500' }}>Category</span>
+                    </div>
+                    
+                    <div style={{
+                        width: '50px',
+                        height: '2px',
+                        backgroundColor: '#7c6fd6'
+                    }}></div>
+                    
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -394,13 +414,13 @@ function CreateItemForm({ token, initialData, onNext }) {
                             justifyContent: 'center',
                             fontWeight: '600'
                         }}>
-                            1
+                            2
                         </div>
                         <span style={{ color: '#7c6fd6', fontWeight: '600' }}>Basic Info</span>
                     </div>
                     
                     <div style={{
-                        width: '60px',
+                        width: '50px',
                         height: '2px',
                         backgroundColor: '#dee2e6'
                     }}></div>
@@ -421,9 +441,9 @@ function CreateItemForm({ token, initialData, onNext }) {
                             justifyContent: 'center',
                             fontWeight: '600'
                         }}>
-                            2
+                            3
                         </div>
-                        <span style={{ color: '#6c757d', fontWeight: '500' }}>Virtual Cafè Settings</span>
+                        <span style={{ color: '#6c757d', fontWeight: '500' }}>Virtual Café</span>
                     </div>
                 </div>
             </div>
@@ -455,27 +475,47 @@ function CreateItemForm({ token, initialData, onNext }) {
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                     padding: '2rem'
                 }}>
+                    {/* Category Badge */}
+                    <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#f0f0ff',
+                        borderRadius: '20px',
+                        marginBottom: '1rem',
+                        border: '1px solid #7c6fd6'
+                    }}>
+                        <span style={{ fontSize: '1.2rem' }}>📂</span>
+                        <span style={{ 
+                            fontWeight: '600',
+                            color: '#7c6fd6'
+                        }}>
+                            {categoryName}
+                        </span>
+                    </div>
+
                     <h2 style={{ 
                         marginBottom: '0.5rem',
                         color: '#213547',
                         fontSize: '1.75rem',
                         fontWeight: '600'
                     }}>
-                        Create New Item
+                        Item Details
                     </h2>
                     <p style={{
                         marginBottom: '2rem',
                         color: '#6c757d',
                         fontSize: '0.95rem'
                     }}>
-                        Fill in the basic information for your item (Step 1 of 2)
+                        {getCategoryFieldDescription(categoryName)}
                     </p>
 
                     <form onSubmit={handleSubmit}>
                         {/* Item Status */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
-                                Item Status <span style={{ color: '#dc3545' }}>*</span>
+                                {categoryName} Status <span style={{ color: '#dc3545' }}>*</span>
                             </label>
                             <select
                                 name="item_status"
@@ -492,10 +532,10 @@ function CreateItemForm({ token, initialData, onNext }) {
                             </select>
                         </div>
 
-                        {/* Name */}
+                        {/* Name - Always shown */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
-                                Name <span style={{ color: '#dc3545' }}>*</span>
+                                {categoryName} Name <span style={{ color: '#dc3545' }}>*</span>
                             </label>
                             <input
                                 type="text"
@@ -508,7 +548,7 @@ function CreateItemForm({ token, initialData, onNext }) {
                             />
                         </div>
 
-                        {/* Offered By */}
+                        {/* Offered By - Always shown (Read-only) */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
                                 Inserted by <span style={{ color: '#dc3545' }}>*</span>
@@ -517,11 +557,13 @@ function CreateItemForm({ token, initialData, onNext }) {
                                 type="text"
                                 name="offered_by"
                                 value={formData.offered_by}
-                                onChange={handleInputChange}
+                                readOnly
                                 required
                                 style={{
                                     ...inputStyle,
-                                    backgroundColor: '#f8f9fa'
+                                    backgroundColor: '#f8f9fa',
+                                    cursor: 'not-allowed',
+                                    color: '#6c757d'
                                 }}
                                 placeholder="Instructor/Professor name"
                             />
@@ -531,13 +573,13 @@ function CreateItemForm({ token, initialData, onNext }) {
                                 fontSize: '0.85rem',
                                 color: '#6c757d'
                             }}>
-                                Pre-filled from your profile. You can edit if needed.
+                                Pre-filled from your profile (cannot be edited).
                             </small>
                         </div>
 
-                        {/* Description */}
+                        {/* Description - Always shown */}
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Description</label>
+                            <label style={labelStyle}>{categoryName} Description</label>
                             <textarea
                                 name="description"
                                 value={formData.description}
@@ -548,382 +590,488 @@ function CreateItemForm({ token, initialData, onNext }) {
                             />
                         </div>
 
-                        {/* Category */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>
-                                Category 
-                            </label>
-                            <select
-                                name="item_category"
-                                value={formData.item_category}
-                                onChange={handleInputChange}
-                                style={selectStyle}
-                            >
-                                <option value="">Select a category</option>
-                                {categories.map(cat => (
-                                    <option key={cat.documentId} value={cat.documentId}>
-                                        {cat.attributes?.name || cat.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {/* Dates - Conditional */}
+                        {(shouldShowField('start_date', categoryName) || 
+                          shouldShowField('end_date', categoryName) || 
+                          shouldShowField('expiration', categoryName)) && (
+                            <>
+                                <div style={{ 
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                                    gap: '1.5rem',
+                                    marginBottom: '1.5rem'
+                                }}>
+                                    {shouldShowField('start_date', categoryName) && (
+                                        <div>
+                                            <label style={labelStyle}> Start Date <span style={{ color: '#dc3545' }}>*</span></label>
+                                            <input
+                                                type="date"
+                                                name="start_date"
+                                                value={formData.start_date}
+                                                onChange={handleInputChange}
+                                                style={inputStyle}
+                                                required
+                                            />
+                                        </div>
+                                    )}
 
-                        {/* Dates */}
-                        <div style={{ 
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                            gap: '1.5rem',
-                            marginBottom: '1.5rem'
-                        }}>
-                            <div>
-                                <label style={labelStyle}>Start Date</label>
+                                    {shouldShowField('end_date', categoryName) && (
+                                        <div>
+                                            <label style={labelStyle}>End Date <span style={{ color: '#dc3545' }}>*</span></label>
+                                            <input
+                                                type="date"
+                                                name="end_date"
+                                                value={formData.end_date}
+                                                onChange={handleInputChange}
+                                                style={inputStyle}
+                                                required
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {shouldShowField('expiration', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Expiration Date <span style={{ color: '#dc3545' }}>*</span></label>
+                                        <input
+                                            type="date"
+                                            name="expiration"
+                                            value={formData.expiration}
+                                            onChange={handleInputChange}
+                                            style={inputStyle}
+                                            required
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Academic Fields - Conditional */}
+                        {(shouldShowField('isced_code', categoryName) || 
+                          shouldShowField('level_of_study', categoryName) ||
+                          shouldShowField('learning_outcomes', categoryName) ||
+                          shouldShowField('pedagogical_objectives', categoryName)) && (
+                            <>
+                                <div style={{
+                                    marginTop: '2rem',
+                                    marginBottom: '1rem',
+                                    paddingBottom: '0.5rem',
+                                    borderBottom: '2px solid #e9ecef'
+                                }}>
+                                    <h3 style={{
+                                        margin: 0,
+                                        color: '#495057',
+                                        fontSize: '1.2rem',
+                                        fontWeight: '600'
+                                    }}>
+                                        Academic Information
+                                    </h3>
+                                </div>
+
+                                {shouldShowField('isced_code', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>ISCED Code</label>
+                                        <input
+                                            type="text"
+                                            name="isced_code"
+                                            value={formData.isced_code}
+                                            onChange={handleInputChange}
+                                            style={inputStyle}
+                                            placeholder="Enter ISCED code"
+                                        />
+                                    </div>
+                                )}
+
+                                {shouldShowField('level_of_study', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Level of Study</label>
+                                        <input
+                                            type="text"
+                                            name="level_of_study"
+                                            value={formData.level_of_study}
+                                            onChange={handleInputChange}
+                                            style={inputStyle}
+                                            placeholder="e.g., Undergraduate, Graduate"
+                                        />
+                                    </div>
+                                )}
+
+                                {shouldShowField('learning_outcomes', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Learning Outcomes</label>
+                                        <textarea
+                                            name="learning_outcomes"
+                                            value={formData.learning_outcomes}
+                                            onChange={handleInputChange}
+                                            rows={3}
+                                            style={textareaStyle}
+                                            placeholder="Enter learning outcomes"
+                                        />
+                                    </div>
+                                )}
+
+                                {shouldShowField('pedagogical_objectives', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Pedagogical Objectives</label>
+                                        <textarea
+                                            name="pedagogical_objectives"
+                                            value={formData.pedagogical_objectives}
+                                            onChange={handleInputChange}
+                                            rows={3}
+                                            style={textareaStyle}
+                                            placeholder="Enter pedagogical objectives"
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Research Fields - Conditional */}
+                        {(shouldShowField('erc_area', categoryName) || 
+                          shouldShowField('erc_panel', categoryName) ||
+                          shouldShowField('erc_keyword', categoryName)) && (
+                            <>
+                                <div style={{
+                                    marginTop: '2rem',
+                                    marginBottom: '1rem',
+                                    paddingBottom: '0.5rem',
+                                    borderBottom: '2px solid #e9ecef'
+                                }}>
+                                    <h3 style={{
+                                        margin: 0,
+                                        color: '#495057',
+                                        fontSize: '1.2rem',
+                                        fontWeight: '600'
+                                    }}>
+                                        Research Classification
+                                    </h3>
+                                </div>
+
+                                <div style={{ 
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                                    gap: '1.5rem',
+                                    marginBottom: '1.5rem'
+                                }}>
+                                    {shouldShowField('erc_area', categoryName) && (
+                                        <div>
+                                            <label style={labelStyle}>ERC Area</label>
+                                            <select
+                                                name="erc_area"
+                                                value={formData.erc_area}
+                                                onChange={handleInputChange}
+                                                style={selectStyle}
+                                            >
+                                                <option value="">Select ERC Area</option>
+                                                {ercAreaOptions.map(area => (
+                                                    <option key={area.value} value={area.value}>
+                                                        {area.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <small style={{ 
+                                                display: 'block',
+                                                marginTop: '0.25rem',
+                                                fontSize: '0.85rem',
+                                                color: '#6c757d'
+                                            }}>
+                                                Select area first to filter panels
+                                            </small>
+                                        </div>
+                                    )}
+
+                                    {shouldShowField('erc_panel', categoryName) && (
+                                        <div>
+                                            <label style={labelStyle}>ERC Panel</label>
+                                            <select
+                                                name="erc_panel"
+                                                value={formData.erc_panel}
+                                                onChange={handleInputChange}
+                                                style={{
+                                                    ...selectStyle,
+                                                    cursor: !formData.erc_area ? 'not-allowed' : 'pointer',
+                                                    opacity: !formData.erc_area ? 0.6 : 1
+                                                }}
+                                                disabled={!formData.erc_area}
+                                            >
+                                                <option value="">
+                                                    {formData.erc_area ? 'Select ERC Panel' : 'Select area first'}
+                                                </option>
+                                                {ercPanels.map(panel => (
+                                                    <option key={panel.documentId} value={panel.documentId}>
+                                                        {panel.attributes?.name || panel.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <small style={{ 
+                                                display: 'block',
+                                                marginTop: '0.25rem',
+                                                fontSize: '0.85rem',
+                                                color: '#6c757d'
+                                            }}>
+                                                Select panel to filter keywords
+                                            </small>
+                                        </div>
+                                    )}
+
+                                    {shouldShowField('erc_keyword', categoryName) && (
+                                        <div>
+                                            <label style={labelStyle}>ERC Keyword</label>
+                                            <select
+                                                name="erc_keyword"
+                                                value={formData.erc_keyword}
+                                                onChange={handleInputChange}
+                                                style={{
+                                                    ...selectStyle,
+                                                    cursor: !formData.erc_panel ? 'not-allowed' : 'pointer',
+                                                    opacity: !formData.erc_panel ? 0.6 : 1
+                                                }}
+                                                disabled={!formData.erc_panel}
+                                            >
+                                                <option value="">
+                                                    {formData.erc_panel ? 'Select ERC Keyword' : 'Select panel first'}
+                                                </option>
+                                                {ercKeywords.map(keyword => (
+                                                    <option key={keyword.documentId} value={keyword.documentId}>
+                                                        {keyword.attributes?.name || keyword.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {/* Content Fields - Conditional */}
+                        {(shouldShowField('languages', categoryName) || 
+                          shouldShowField('speakers', categoryName) ||
+                          shouldShowField('multimediarial_material_provided', categoryName)) && (
+                            <>
+                                <div style={{
+                                    marginTop: '2rem',
+                                    marginBottom: '1rem',
+                                    paddingBottom: '0.5rem',
+                                    borderBottom: '2px solid #e9ecef'
+                                }}>
+                                    <h3 style={{
+                                        margin: 0,
+                                        color: '#495057',
+                                        fontSize: '1.2rem',
+                                        fontWeight: '600'
+                                    }}>
+                                        Content Details
+                                    </h3>
+                                </div>
+
+                                {shouldShowField('languages', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Languages <span style={{ color: '#dc3545' }}>*</span></label>
+                                        <input
+                                            type="text"
+                                            name="languages"
+                                            value={formData.languages}
+                                            onChange={handleInputChange}
+                                            style={inputStyle}
+                                            placeholder="e.g., English, Spanish, French"
+                                            required
+                                        />
+                                    </div>
+                                )}
+
+                                {shouldShowField('speakers', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Speakers</label>
+                                        <input
+                                            type="text"
+                                            name="speakers"
+                                            value={formData.speakers}
+                                            onChange={handleInputChange}
+                                            style={inputStyle}
+                                            placeholder="Enter speaker names"
+                                        />
+                                    </div>
+                                )}
+
+                                {shouldShowField('multimediarial_material_provided', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Multimedia Material Provided</label>
+                                        <textarea
+                                            name="multimediarial_material_provided"
+                                            value={formData.multimediarial_material_provided}
+                                            onChange={handleInputChange}
+                                            rows={3}
+                                            style={textareaStyle}
+                                            placeholder="Describe multimedia materials"
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Structure Fields - Conditional */}
+                        {(shouldShowField('university', categoryName) || 
+                          shouldShowField('first_level_structure', categoryName) ||
+                          shouldShowField('second_level_structure', categoryName)) && (
+                            <>
+                                <div style={{
+                                    marginTop: '2rem',
+                                    marginBottom: '1rem',
+                                    paddingBottom: '0.5rem',
+                                    borderBottom: '2px solid #e9ecef'
+                                }}>
+                                    <h3 style={{
+                                        margin: 0,
+                                        color: '#495057',
+                                        fontSize: '1.2rem',
+                                        fontWeight: '600'
+                                    }}>
+                                        Institutional Information
+                                    </h3>
+                                </div>
+
+                                {shouldShowField('university', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>
+                                            University <span style={{ color: '#dc3545' }}>*</span>
+                                        </label>
+                                        <select
+                                            name="university"
+                                            value={formData.university}
+                                            onChange={handleInputChange}
+                                            required
+                                            style={{
+                                                ...selectStyle,
+                                                backgroundColor: '#f8f9fa'
+                                            }}
+                                        >
+                                            <option value="">Select university</option>
+                                            {universities.map(uni => (
+                                                <option key={uni.documentId} value={uni.documentId}>
+                                                    {uni.attributes?.name || uni.university_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <small style={{ 
+                                            display: 'block',
+                                            marginTop: '0.25rem',
+                                            fontSize: '0.85rem',
+                                            color: '#6c757d'
+                                        }}>
+                                            Pre-filled from your profile
+                                        </small>
+                                    </div>
+                                )}
+
+                                {shouldShowField('first_level_structure', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>First Level Structure <span style={{ color: '#dc3545' }}>*</span></label>
+                                        <select
+                                            name="first_level_structure"
+                                            value={formData.first_level_structure}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                ...selectStyle,
+                                                backgroundColor: '#f8f9fa',
+                                                cursor: !formData.university ? 'not-allowed' : 'pointer',
+                                                opacity: !formData.university ? 0.6 : 1
+                                            }}
+                                            disabled={!formData.university}
+                                            required
+                                        >
+                                            <option value="">
+                                                {formData.university ? 'Select first level structure' : 'Select university first'}
+                                            </option>
+                                            {firstLevelStructures.map(struct => (
+                                                <option key={struct.documentId} value={struct.documentId}>
+                                                    {struct.attributes?.name || struct.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <small style={{ 
+                                            display: 'block',
+                                            marginTop: '0.25rem',
+                                            fontSize: '0.85rem',
+                                            color: '#6c757d'
+                                        }}>
+                                            {formData.university ? 'Pre-filled from your profile' : 'Select university to enable'}
+                                        </small>
+                                    </div>
+                                )}
+
+                                {shouldShowField('second_level_structure', categoryName) && (
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={labelStyle}>Second Level Structure <span style={{ color: '#dc3545' }}>*</span></label>
+                                        <select
+                                            name="second_level_structure"
+                                            value={formData.second_level_structure}
+                                            onChange={handleInputChange}
+                                            style={{
+                                                ...selectStyle,
+                                                backgroundColor: '#f8f9fa',
+                                                cursor: !formData.first_level_structure ? 'not-allowed' : 'pointer',
+                                                opacity: !formData.first_level_structure ? 0.6 : 1
+                                            }}
+                                            disabled={!formData.first_level_structure || secondLevelStructures.length === 0}
+                                            required 
+                                        >
+                                            <option value="">
+                                                {formData.first_level_structure ? 'Select second level structure' : 'Select first level first'}
+                                            </option>
+                                            {secondLevelStructures.map(struct => (
+                                                <option key={struct.documentId} value={struct.documentId}>
+                                                    {struct.attributes?.name || struct.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <small style={{ 
+                                            display: 'block',
+                                            marginTop: '0.25rem',
+                                            fontSize: '0.85rem',
+                                            color: '#6c757d'
+                                        }}>
+                                            {formData.first_level_structure ? 'Pre-filled from your profile' : 'Select first level structure to enable'}
+                                        </small>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* Cover Image - Conditional */}
+                        {shouldShowField('cover', categoryName) && (
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={labelStyle}>Cover Image</label>
                                 <input
-                                    type="date"
-                                    name="start_date"
-                                    value={formData.start_date}
-                                    onChange={handleInputChange}
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>End Date</label>
-                                <input
-                                    type="date"
-                                    name="end_date"
-                                    value={formData.end_date}
-                                    onChange={handleInputChange}
-                                    style={inputStyle}
-                                />
-                            </div>
-                        </div>
-
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Expiration Date</label>
-                            <input
-                                type="date"
-                                name="expiration"
-                                value={formData.expiration}
-                                onChange={handleInputChange}
-                                style={inputStyle}
-                            />
-                        </div>
-
-                        {/* ISCED Code */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>ISCED Code</label>
-                            <input
-                                type="text"
-                                name="isced_code"
-                                value={formData.isced_code}
-                                onChange={handleInputChange}
-                                style={inputStyle}
-                                placeholder="Enter ISCED code"
-                            />
-                        </div>
-
-                        {/* ERC Area, Panel and Keyword */}
-                        <div style={{ 
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                            gap: '1.5rem',
-                            marginBottom: '1.5rem'
-                        }}>
-                            {/* ERC Area */}
-                            <div>
-                                <label style={labelStyle}>ERC Area</label>
-                                <select
-                                    name="erc_area"
-                                    value={formData.erc_area}
-                                    onChange={handleInputChange}
-                                    style={selectStyle}
-                                >
-                                    <option value="">Select ERC Area</option>
-                                    {ercAreaOptions.map(area => (
-                                        <option key={area.value} value={area.value}>
-                                            {area.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <small style={{ 
-                                    display: 'block',
-                                    marginTop: '0.25rem',
-                                    fontSize: '0.85rem',
-                                    color: '#6c757d'
-                                }}>
-                                    Select area first to filter panels
-                                </small>
-                            </div>
-
-                            {/* ERC Panel */}
-                            <div>
-                                <label style={labelStyle}>ERC Panel</label>
-                                <select
-                                    name="erc_panel"
-                                    value={formData.erc_panel}
-                                    onChange={handleInputChange}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
                                     style={{
-                                        ...selectStyle,
-                                        cursor: !formData.erc_area ? 'not-allowed' : 'pointer',
-                                        opacity: !formData.erc_area ? 0.6 : 1
+                                        ...inputStyle,
+                                        padding: '0.5rem'
                                     }}
-                                    disabled={!formData.erc_area}
-                                >
-                                    <option value="">
-                                        {formData.erc_area ? 'Select ERC Panel' : 'Select area first'}
-                                    </option>
-                                    {ercPanels.map(panel => (
-                                        <option key={panel.documentId} value={panel.documentId}>
-                                            {panel.attributes?.name || panel.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <small style={{ 
-                                    display: 'block',
-                                    marginTop: '0.25rem',
-                                    fontSize: '0.85rem',
-                                    color: '#6c757d'
-                                }}>
-                                    Select panel to filter keywords
-                                </small>
+                                />
+                                {formData.cover && (
+                                    <p style={{ 
+                                        marginTop: '0.5rem',
+                                        fontSize: '0.9rem',
+                                        color: '#6c757d'
+                                    }}>
+                                        Selected: {formData.cover.name}
+                                    </p>
+                                )}
                             </div>
-
-                            {/* ERC Keyword */}
-                            <div>
-                                <label style={labelStyle}>ERC Keyword</label>
-                                <select
-                                    name="erc_keyword"
-                                    value={formData.erc_keyword}
-                                    onChange={handleInputChange}
-                                    style={{
-                                        ...selectStyle,
-                                        cursor: !formData.erc_panel ? 'not-allowed' : 'pointer',
-                                        opacity: !formData.erc_panel ? 0.6 : 1
-                                    }}
-                                    disabled={!formData.erc_panel}
-                                >
-                                    <option value="">
-                                        {formData.erc_panel ? 'Select ERC Keyword' : 'Select panel first'}
-                                    </option>
-                                    {ercKeywords.map(keyword => (
-                                        <option key={keyword.documentId} value={keyword.documentId}>
-                                            {keyword.attributes?.name || keyword.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Learning Outcomes */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Learning Outcomes</label>
-                            <textarea
-                                name="learning_outcomes"
-                                value={formData.learning_outcomes}
-                                onChange={handleInputChange}
-                                rows={3}
-                                style={textareaStyle}
-                                placeholder="Enter learning outcomes"
-                            />
-                        </div>
-
-                        {/* Multimedia Material */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Multimedia Material Provided</label>
-                            <textarea
-                                name="multimediarial_material_provided"
-                                value={formData.multimediarial_material_provided}
-                                onChange={handleInputChange}
-                                rows={3}
-                                style={textareaStyle}
-                                placeholder="Describe multimedia materials"
-                            />
-                        </div>
-
-                        {/* Languages */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Languages</label>
-                            <input
-                                type="text"
-                                name="languages"
-                                value={formData.languages}
-                                onChange={handleInputChange}
-                                style={inputStyle}
-                                placeholder="e.g., English, Spanish, French"
-                            />
-                        </div>
-
-                        {/* Speakers */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Speakers</label>
-                            <input
-                                type="text"
-                                name="speakers"
-                                value={formData.speakers}
-                                onChange={handleInputChange}
-                                style={inputStyle}
-                                placeholder="Enter speaker names"
-                            />
-                        </div>
-
-                        {/* Pedagogical Objectives */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Pedagogical Objectives</label>
-                            <textarea
-                                name="pedagogical_objectives"
-                                value={formData.pedagogical_objectives}
-                                onChange={handleInputChange}
-                                rows={3}
-                                style={textareaStyle}
-                                placeholder="Enter pedagogical objectives"
-                            />
-                        </div>
-
-                        {/* Level of Study */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Level of Study</label>
-                            <input
-                                type="text"
-                                name="level_of_study"
-                                value={formData.level_of_study}
-                                onChange={handleInputChange}
-                                style={inputStyle}
-                                placeholder="e.g., Undergraduate, Graduate"
-                            />
-                        </div>
-
-                        {/* University */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>
-                                University <span style={{ color: '#dc3545' }}>*</span>
-                            </label>
-                            <select
-                                name="university"
-                                value={formData.university}
-                                onChange={handleInputChange}
-                                required
-                                style={{
-                                    ...selectStyle,
-                                    backgroundColor: '#f8f9fa'
-                                }}
-                            >
-                                <option value="">Select university</option>
-                                {universities.map(uni => (
-                                    <option key={uni.documentId} value={uni.documentId}>
-                                        {uni.attributes?.name || uni.university_name}
-                                    </option>
-                                ))}
-                            </select>
-                            <small style={{ 
-                                display: 'block',
-                                marginTop: '0.25rem',
-                                fontSize: '0.85rem',
-                                color: '#6c757d'
-                            }}>
-                                Pre-filled from your profile
-                            </small>
-                        </div>
-
-                        {/* First Level Structure */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>First Level Structure</label>
-                            <select
-                                name="first_level_structure"
-                                value={formData.first_level_structure}
-                                onChange={handleInputChange}
-                                style={{
-                                    ...selectStyle,
-                                    backgroundColor: '#f8f9fa',
-                                    cursor: !formData.university ? 'not-allowed' : 'pointer',
-                                    opacity: !formData.university ? 0.6 : 1
-                                }}
-                                disabled={!formData.university}
-                            >
-                                <option value="">
-                                    {formData.university ? 'Select first level structure' : 'Select university first'}
-                                </option>
-                                {firstLevelStructures.map(struct => (
-                                    <option key={struct.documentId} value={struct.documentId}>
-                                        {struct.attributes?.name || struct.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <small style={{ 
-                                display: 'block',
-                                marginTop: '0.25rem',
-                                fontSize: '0.85rem',
-                                color: '#6c757d'
-                            }}>
-                                {formData.university ? 'Pre-filled from your profile' : 'Select university to enable'}
-                            </small>
-                        </div>
-
-                        {/* Second Level Structure */}
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={labelStyle}>Second Level Structure</label>
-                            <select
-                                name="second_level_structure"
-                                value={formData.second_level_structure}
-                                onChange={handleInputChange}
-                                style={{
-                                    ...selectStyle,
-                                    backgroundColor: '#f8f9fa',
-                                    cursor: !formData.first_level_structure ? 'not-allowed' : 'pointer',
-                                    opacity: !formData.first_level_structure ? 0.6 : 1
-                                }}
-                                disabled={!formData.first_level_structure || secondLevelStructures.length === 0}
-                            >
-                                <option value="">
-                                    {formData.first_level_structure ? 'Select second level structure' : 'Select first level first'}
-                                </option>
-                                {secondLevelStructures.map(struct => (
-                                    <option key={struct.documentId} value={struct.documentId}>
-                                        {struct.attributes?.name || struct.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <small style={{ 
-                                display: 'block',
-                                marginTop: '0.25rem',
-                                fontSize: '0.85rem',
-                                color: '#6c757d'
-                            }}>
-                                {formData.first_level_structure ? 'Pre-filled from your profile' : 'Select first level structure to enable'}
-                            </small>
-                        </div>
-
-                        {/* Cover Image */}
-                        <div style={{ marginBottom: '2rem' }}>
-                            <label style={labelStyle}>Cover Image</label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                style={{
-                                    ...inputStyle,
-                                    padding: '0.5rem'
-                                }}
-                            />
-                            {formData.cover && (
-                                <p style={{ 
-                                    marginTop: '0.5rem',
-                                    fontSize: '0.9rem',
-                                    color: '#6c757d'
-                                }}>
-                                    Selected: {formData.cover.name}
-                                </p>
-                            )}
-                        </div>
+                        )}
 
                         {/* Navigation Buttons */}
                         <div style={{ 
                             display: 'flex',
                             gap: '1rem',
-                            justifyContent: 'space-between'
+                            justifyContent: 'space-between',
+                            marginTop: '2rem'
                         }}>
                             <button
                                 type="button"
-                                onClick={() => window.history.back()}
+                                onClick={onBack}
                                 style={{
                                     padding: '0.75rem 2rem',
                                     backgroundColor: '#6c757d',
@@ -942,7 +1090,7 @@ function CreateItemForm({ token, initialData, onNext }) {
                                     e.target.style.backgroundColor = '#6c757d';
                                 }}
                             >
-                                Cancel
+                                ← Back to Category
                             </button>
                             <button
                                 type="submit"
