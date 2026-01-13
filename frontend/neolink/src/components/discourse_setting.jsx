@@ -292,16 +292,17 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                 <input
                                     type="text"
                                     name="group_name"
-                                    value={formData.group_name}
+                                    value={formData.group_name.slice(0, 20)}
                                     onChange={handleInputChange}
                                     placeholder="Enter a unique identifier for the group"
                                     required
+                                    maxLength={20}
                                     style={inputStyle}
                                     onFocus={(e) => e.target.style.borderColor = '#7c6fd6'}
                                     onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
                                 />
                                 <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                    This is the internal identifier used by the system, must be unique.
+                                    This is the internal identifier used by the system, must be unique (max 20 characters).
                                 </small>
                             </div>
 
