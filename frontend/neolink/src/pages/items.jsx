@@ -20,7 +20,14 @@ function ItemsList() {
         item_status: '',
         erc_area: '',
         erc_panel: '',
-        erc_keyword: ''
+        erc_keyword: '',
+        languages: '',
+        start_date_from: '',
+        start_date_to: '',
+        end_date_from: '',
+        end_date_to: '',
+        expiration_from: '',
+        expiration_to: ''
     });
     const [showFilters, setShowFilters] = useState(false);
 
@@ -39,7 +46,6 @@ function ItemsList() {
             // Multi-field search using $or operator
             if (filters.search) {
                 const searchTerm = filters.search;
-                // Add multiple field searches with $or operator
                 queryParams.append('filters[$or][0][name][$containsi]', searchTerm);
                 queryParams.append('filters[$or][1][description][$containsi]', searchTerm);
                 queryParams.append('filters[$or][2][learning_outcomes][$containsi]', searchTerm);
@@ -51,28 +57,54 @@ function ItemsList() {
             }
             
             if (filters.category_id) {
-                queryParams.append('filters[category_id][$eq]', filters.category_id);
+                console.log("Applying category_id filter:", filters.category_id);
+                queryParams.append('filters[item_category][documentId][$eq]', filters.category_id);
             }
             if (filters.university) {
-                queryParams.append('filters[university][$eq]', filters.university);
+                queryParams.append('filters[university][documentId][$eq]', filters.university);
             }
             if (filters.item_status) {
                 queryParams.append('filters[item_status][$eq]', filters.item_status);
             }
             
-            // ERC Area filter - filter by erc_area field in items
+            // ERC Area filter
             if (filters.erc_area) {
                 queryParams.append('filters[erc_area][$eq]', filters.erc_area);
             }
             
-            // ERC Panel filter - only apply if erc_area is also selected
+            // ERC Panel filter
             if (filters.erc_panel && filters.erc_area) {
-                queryParams.append('filters[erc_panel][$eq]', filters.erc_panel);
+                queryParams.append('filters[erc_panel][documentId][$eq]', filters.erc_panel);
             }
             
-            // ERC Keyword filter - only apply if both erc_area and erc_panel are selected
+            // ERC Keyword filter
             if (filters.erc_keyword && filters.erc_panel && filters.erc_area) {
-                queryParams.append('filters[erc_keyword][$eq]', filters.erc_keyword);
+                queryParams.append('filters[erc_keyword][documentId][$eq]', filters.erc_keyword);
+            }
+
+            // Languages filter
+            if (filters.languages) {
+                queryParams.append('filters[languages][$containsi]', filters.languages);
+            }
+
+            // Date filters
+            if (filters.start_date_from) {
+                queryParams.append('filters[start_date][$gte]', filters.start_date_from);
+            }
+            if (filters.start_date_to) {
+                queryParams.append('filters[start_date][$lte]', filters.start_date_to);
+            }
+            if (filters.end_date_from) {
+                queryParams.append('filters[end_date][$gte]', filters.end_date_from);
+            }
+            if (filters.end_date_to) {
+                queryParams.append('filters[end_date][$lte]', filters.end_date_to);
+            }
+            if (filters.expiration_from) {
+                queryParams.append('filters[expiration][$gte]', filters.expiration_from);
+            }
+            if (filters.expiration_to) {
+                queryParams.append('filters[expiration][$lte]', filters.expiration_to);
             }
 
             console.log("Fetching items with filters:", queryParams.toString());
@@ -102,8 +134,23 @@ function ItemsList() {
             item_status: '',
             erc_area: '',
             erc_panel: '',
-            erc_keyword: ''
+            erc_keyword: '',
+            languages: '',
+            start_date_from: '',
+            start_date_to: '',
+            end_date_from: '',
+            end_date_to: '',
+            expiration_from: '',
+            expiration_to: ''
         });
+    };
+
+    const hasActiveFilters = () => {
+        return filters.search || filters.category_id || filters.university || 
+               filters.item_status || filters.erc_area || filters.erc_panel || 
+               filters.erc_keyword || filters.languages || filters.start_date_from || 
+               filters.start_date_to || filters.end_date_from || filters.end_date_to ||
+               filters.expiration_from || filters.expiration_to;
     };
 
     return (
@@ -135,13 +182,6 @@ function ItemsList() {
                             style={{ maxHeight: '50px', height: 'auto', cursor: 'pointer' }}
                             onClick={() => navigate('/')}
                         />
-                        <h1 style={{ 
-                            fontSize: '1.25rem',
-                            fontWeight: 'bold',
-                            color: '#667eea',
-                            margin: 0
-                        }}>
-                        </h1>
                     </div>
                     <img 
                         src={eu_logo} 
@@ -164,7 +204,7 @@ function ItemsList() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '2rem',
+                    marginBottom: '1.5rem',
                     flexWrap: 'wrap',
                     gap: '1rem'
                 }}>
@@ -179,6 +219,15 @@ function ItemsList() {
                         </h2>
                         <p style={{ color: '#6c757d', margin: 0 }}>
                             {items.length} {items.length === 1 ? 'item' : 'items'} found
+                            {hasActiveFilters() && (
+                                <span style={{ 
+                                    marginLeft: '0.5rem',
+                                    color: '#7c6fd6',
+                                    fontWeight: '500'
+                                }}>
+                                    • Filters active
+                                </span>
+                            )}
                         </p>
                     </div>
                     
@@ -186,7 +235,9 @@ function ItemsList() {
                         onClick={() => setShowFilters(!showFilters)}
                         style={{
                             padding: '0.75rem 1.5rem',
-                            background: 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
+                            background: showFilters 
+                                ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' 
+                                : 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
@@ -194,112 +245,140 @@ function ItemsList() {
                             fontWeight: '600',
                             cursor: 'pointer',
                             transition: 'all 0.3s',
-                            boxShadow: '0 2px 4px rgba(124, 111, 214, 0.2)'
+                            boxShadow: showFilters 
+                                ? '0 2px 4px rgba(220, 53, 69, 0.2)' 
+                                : '0 2px 4px rgba(124, 111, 214, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
                         }}
                         onMouseEnter={(e) => {
                             e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(124, 111, 214, 0.4)';
+                            e.target.style.boxShadow = showFilters 
+                                ? '0 4px 12px rgba(220, 53, 69, 0.4)' 
+                                : '0 4px 12px rgba(124, 111, 214, 0.4)';
                         }}
                         onMouseLeave={(e) => {
                             e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 2px 4px rgba(124, 111, 214, 0.2)';
+                            e.target.style.boxShadow = showFilters 
+                                ? '0 2px 4px rgba(220, 53, 69, 0.2)' 
+                                : '0 2px 4px rgba(124, 111, 214, 0.2)';
                         }}
                     >
-                        {showFilters ? '✕ Hide Filters' : '⚙ Show Filters'}
+                        <span style={{ fontSize: '1.2rem' }}>
+                            {showFilters ? '✕' : '⚙'}
+                        </span>
+                        <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+                        {hasActiveFilters() && !showFilters && (
+                            <span style={{
+                                display: 'inline-block',
+                                width: '8px',
+                                height: '8px',
+                                backgroundColor: 'white',
+                                borderRadius: '50%'
+                            }}></span>
+                        )}
                     </button>
                 </div>
 
-                <div style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: showFilters ? '300px 1fr' : '1fr',
-                    gap: '2rem',
-                    alignItems: 'start'
-                }}>
-                    {/* Filter Sidebar */}
-                    {showFilters && (
+                {/* Filters Section - Top Position */}
+                {showFilters && (
+                    <div style={{
+                        marginBottom: '2rem',
+                        animation: 'slideDown 0.3s ease-out'
+                    }}>
                         <ItemsFilter 
                             filters={filters}
                             onFilterChange={handleFilterChange}
                             onClearFilters={clearFilters}
                         />
+                    </div>
+                )}
+
+                {/* Items Grid */}
+                <div>
+                    {error && (
+                        <div style={{
+                            padding: '1rem',
+                            backgroundColor: '#f8d7da',
+                            border: '1px solid #f5c2c7',
+                            borderRadius: '8px',
+                            marginBottom: '1.5rem',
+                            color: '#842029'
+                        }}>
+                            {error}
+                        </div>
                     )}
 
-                    {/* Items Grid */}
-                    <div>
-                        {error && (
-                            <div style={{
-                                padding: '1rem',
-                                backgroundColor: '#f8d7da',
-                                border: '1px solid #f5c2c7',
-                                borderRadius: '8px',
-                                marginBottom: '1.5rem',
-                                color: '#842029'
-                            }}>
-                                {error}
+                    {loading ? (
+                        <div style={{ 
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            minHeight: '400px'
+                        }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{
+                                    width: '3rem',
+                                    height: '3rem',
+                                    border: '0.3rem solid #f3f3f3',
+                                    borderTop: '0.3rem solid #7c6fd6',
+                                    borderRadius: '50%',
+                                    animation: 'spin 1s linear infinite',
+                                    margin: '0 auto'
+                                }}></div>
+                                <p style={{ marginTop: '1rem', color: '#6c757d' }}>Loading items...</p>
                             </div>
-                        )}
-
-                        {loading ? (
-                            <div style={{ 
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                minHeight: '400px'
-                            }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{
-                                        width: '3rem',
-                                        height: '3rem',
-                                        border: '0.3rem solid #f3f3f3',
-                                        borderTop: '0.3rem solid #7c6fd6',
-                                        borderRadius: '50%',
-                                        animation: 'spin 1s linear infinite',
-                                        margin: '0 auto'
-                                    }}></div>
-                                    <p style={{ marginTop: '1rem', color: '#6c757d' }}>Loading items...</p>
-                                </div>
-                            </div>
-                        ) : items.length === 0 ? (
-                            <div style={{
-                                textAlign: 'center',
-                                padding: '4rem 2rem',
-                                backgroundColor: 'white',
-                                borderRadius: '16px',
-                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                            }}>
-                                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📭</div>
-                                <h3 style={{ color: '#213547', marginBottom: '0.5rem' }}>No items found</h3>
-                                <p style={{ color: '#6c757d' }}>Try adjusting your filters or search criteria</p>
-                                {(filters.search || filters.category_id || filters.university || filters.item_status || filters.erc_area) && (
-                                    <button
-                                        onClick={clearFilters}
-                                        style={{
-                                            marginTop: '1rem',
-                                            padding: '0.75rem 1.5rem',
-                                            backgroundColor: '#7c6fd6',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            fontWeight: '600'
-                                        }}
-                                    >
-                                        Clear Filters
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                                gap: '1.5rem'
-                            }}>
-                                {items.map(item => (
-                                    <ItemCard key={item.id} item={item} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : items.length === 0 ? (
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '4rem 2rem',
+                            backgroundColor: 'white',
+                            borderRadius: '16px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                        }}>
+                            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📭</div>
+                            <h3 style={{ color: '#213547', marginBottom: '0.5rem' }}>No items found</h3>
+                            <p style={{ color: '#6c757d', marginBottom: '1rem' }}>
+                                Try adjusting your filters or search criteria
+                            </p>
+                            {hasActiveFilters() && (
+                                <button
+                                    onClick={clearFilters}
+                                    style={{
+                                        marginTop: '1rem',
+                                        padding: '0.75rem 1.5rem',
+                                        backgroundColor: '#7c6fd6',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = '#6b5ec5';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = '#7c6fd6';
+                                    }}
+                                >
+                                    Clear All Filters
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                            gap: '1.5rem'
+                        }}>
+                            {items.map(item => (
+                                <ItemCard key={item.id} item={item} />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -307,6 +386,17 @@ function ItemsList() {
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
+                }
+                
+                @keyframes slideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
             `}</style>
         </div>
