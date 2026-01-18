@@ -39,6 +39,14 @@ module.exports = {
             config:{
                 middlewares: ["global::otp-auth"]
             }
+        },
+        {
+            method: 'POST',
+            path: '/custom-item/my-items/',
+            handler: 'custom-item.getItemsSelled',
+            config:{
+                middlewares: ["global::otp-auth"]
+            }
         }
     ]
 }

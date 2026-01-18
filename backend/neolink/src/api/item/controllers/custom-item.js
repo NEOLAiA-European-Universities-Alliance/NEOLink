@@ -458,131 +458,148 @@ module.exports = {
         }
     },
     async updateItem(ctx, next){
-    const { item_id, cover, data, token } = ctx.request.body; 
-    console.log("Update data received:", data);
-    
-    try{
-        const entry = await strapi.db.query("api::item.item").findOne({
-            select: ['documentId', 'name', 'discourse_group_id', 'discourse_category_id'],
-            where: { documentId: item_id },
-        });
+        const { item_id, cover, data, token } = ctx.request.body; 
+        console.log("Update data received:", data);
         
-        if (!entry){
-            return ctx.notFound('Item not found');
-        }
-
-        // Build the update data object
-        const updatePayload = {
-            item_status: data.item_status, 
-            name: data.name,
-            description: data.description,
-            expiration: data.expiration || null,
-            isced_code: data.isced_code || null,
-            erc_area: data.erc_area || null,
-            start_date: data.start_date || null,
-            learning_outcomes: data.learning_outcomes || null,
-            multimedial_material_provided: data.multimediarial_material_provided || null,
-            end_date: data.end_date || null,
-            languages: data.languages || null,
-            speakers: data.speakers || null,
-            pedagogical_objectives: data.pedagogical_objectives || null,
-            level_of_study: data.level_of_study || null,
-        };
-
-        // Handle relations with connect syntax
-        if (data.university) {
-            updatePayload.university = {
-                connect: [{ documentId: data.university }]
-            };
-        }
-
-        if (data.first_level_structure) {
-            updatePayload.first_level_structure = {
-                connect: [{ documentId: data.first_level_structure }]
-            };
-        }
-
-        if (data.second_level_structure) {
-            updatePayload.second_level_structure = {
-                connect: [{ documentId: data.second_level_structure }]
-            };
-        } else {
-            updatePayload.second_level_structure =  null
-        }
-
-        if (data.erc_panel) {
-            updatePayload.erc_panel = {
-                connect: [{ documentId: data.erc_panel }]
-            };
-        }
-
-        if (data.erc_keyword) {
-            updatePayload.erc_keyword = {
-                connect: [{ documentId: data.erc_keyword }]
-            };
-        }
-
-        if (cover) {
-            updatePayload.cover = parseInt(cover);
-        }
-
-        console.log("Update payload:", JSON.stringify(updatePayload, null, 2));
-        
-        const updatedEntry = await strapi.documents("api::item.item").update({
-            documentId: item_id,
-            data: updatePayload
-        });
-        
-        console.log("Updated entry:", updatedEntry);
-
-        await strapi.documents("api::item.item").publish({
-            documentId: item_id
-        });
-
-        // Update Discourse if name changed
-        if (data.name && data.name !== entry.name){
-            const discourse_group_id = entry.discourse_group_id;
-            const discourse_category_id = entry.discourse_category_id;
+        try{
+            const entry = await strapi.db.query("api::item.item").findOne({
+                select: ['documentId', 'name', 'discourse_group_id', 'discourse_category_id'],
+                where: { documentId: item_id },
+            });
             
-            if (discourse_group_id){
-                try{
-                    const group_name_sanitazed = data.name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 20);
-                    await axios.put(`${process.env.DISCOURSE_URL}/groups/${discourse_group_id}.json`, {
-                        name: group_name_sanitazed,
-                        full_name: `[NEOLink] ${data.name}`,
-                    }, {
-                        headers: {
-                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                            'Api-Username': 'system'
-                        }
-                    });
-                } catch (error){
-                    console.log("Error updating Discourse group name: " + error);
+            if (!entry){
+                return ctx.notFound('Item not found');
+            }
+
+            // Build the update data object
+            const updatePayload = {
+                item_status: data.item_status, 
+                name: data.name,
+                description: data.description,
+                expiration: data.expiration || null,
+                isced_code: data.isced_code || null,
+                erc_area: data.erc_area || null,
+                start_date: data.start_date || null,
+                learning_outcomes: data.learning_outcomes || null,
+                multimedial_material_provided: data.multimediarial_material_provided || null,
+                end_date: data.end_date || null,
+                languages: data.languages || null,
+                speakers: data.speakers || null,
+                pedagogical_objectives: data.pedagogical_objectives || null,
+                level_of_study: data.level_of_study || null,
+            };
+
+            // Handle relations with connect syntax
+            if (data.university) {
+                updatePayload.university = {
+                    connect: [{ documentId: data.university }]
+                };
+            }
+
+            if (data.first_level_structure) {
+                updatePayload.first_level_structure = {
+                    connect: [{ documentId: data.first_level_structure }]
+                };
+            }
+
+            if (data.second_level_structure) {
+                updatePayload.second_level_structure = {
+                    connect: [{ documentId: data.second_level_structure }]
+                };
+            } else {
+                updatePayload.second_level_structure =  null
+            }
+
+            if (data.erc_panel) {
+                updatePayload.erc_panel = {
+                    connect: [{ documentId: data.erc_panel }]
+                };
+            }
+
+            if (data.erc_keyword) {
+                updatePayload.erc_keyword = {
+                    connect: [{ documentId: data.erc_keyword }]
+                };
+            }
+
+            if (cover) {
+                updatePayload.cover = parseInt(cover);
+            }
+
+            console.log("Update payload:", JSON.stringify(updatePayload, null, 2));
+            
+            const updatedEntry = await strapi.documents("api::item.item").update({
+                documentId: item_id,
+                data: updatePayload
+            });
+            
+            console.log("Updated entry:", updatedEntry);
+
+            await strapi.documents("api::item.item").publish({
+                documentId: item_id
+            });
+
+            // Update Discourse if name changed
+            if (data.name && data.name !== entry.name){
+                const discourse_group_id = entry.discourse_group_id;
+                const discourse_category_id = entry.discourse_category_id;
+                
+                if (discourse_group_id){
+                    try{
+                        const group_name_sanitazed = data.name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 20);
+                        await axios.put(`${process.env.DISCOURSE_URL}/groups/${discourse_group_id}.json`, {
+                            name: group_name_sanitazed,
+                            full_name: `[NEOLink] ${data.name}`,
+                        }, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                    } catch (error){
+                        console.log("Error updating Discourse group name: " + error);
+                    }
+                }
+                
+                if (discourse_category_id){
+                    try{
+                        const categories_name_sanitazed = data.name.slice(0, 50);
+                        await axios.put(`${process.env.DISCOURSE_URL}/categories/${discourse_category_id}.json`, {
+                            name: `[NEOLink] ${categories_name_sanitazed}`,
+                        }, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                    } catch (error){
+                        console.log("Error updating Discourse category name: " + error);
+                    }
                 }
             }
             
-            if (discourse_category_id){
-                try{
-                    const categories_name_sanitazed = data.name.slice(0, 50);
-                    await axios.put(`${process.env.DISCOURSE_URL}/categories/${discourse_category_id}.json`, {
-                        name: `[NEOLink] ${categories_name_sanitazed}`,
-                    }, {
-                        headers: {
-                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                            'Api-Username': 'system'
-                        }
-                    });
-                } catch (error){
-                    console.log("Error updating Discourse category name: " + error);
-                }
-            }
-        }
-        
-        return ctx.send(updatedEntry);
+            return ctx.send(updatedEntry);
 
-    } catch (error){
-        console.log(error);
-        return ctx.internalServerError(error.message);
-    }
-}
+        } catch (error){
+            console.log(error);
+            return ctx.internalServerError(error.message);
+        }
+    },
+    async getItemsSelled(ctx, next){
+        const { user_id } = ctx.request.body.data;
+        try{
+            const items = await strapi.documents('api::item.item').findMany({
+            filters: {
+                seller: {
+                documentId: user_id  
+                }
+            },
+            populate: '*'
+            });
+            return ctx.send(items);
+        } catch (error){
+            console.log(error);
+            return ctx.internalServerError(error.message);
+        }
+    }   
 }
