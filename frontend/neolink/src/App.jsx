@@ -9,6 +9,7 @@ import CreateItem from './pages/create_item.jsx';
 import Items from './pages/items.jsx';
 import ItemDetail from './pages/item_detail.jsx';
 import EditItem from './pages/edit_item.jsx';
+import MyItems from './pages/myitems.jsx';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route basename={'/neolink'} path="/items" element={<Items />} />
           <Route basename={'/neolink'} path="/items/:documentId" element={<ItemDetail />} />
           <Route basename={'/neolink'} path="/items/:documentId/edit" element={<EditItem />} />
+          <Route basename={'/neolink'} path="/my-items" element={<MyItems />} />
         </Routes>
       </Router>
   );

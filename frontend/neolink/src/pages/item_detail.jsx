@@ -25,6 +25,7 @@ function ItemDetail() {
     const [interestMessage, setInterestMessage] = useState(null);
     const [userData, setUserData] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     // Get base URL without /api for uploads
     const getUploadBaseUrl = () => {
@@ -211,13 +212,22 @@ function ItemDetail() {
         }
     };
 
-    const handleDeleteItem = async () => {
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteCancel = () => {
+        setShowDeleteModal(false);
+    };
+
+    const handleDeleteConfirm = async () => {
         if (!token) {
             setInterestMessage({
                 type: 'error',
                 text: 'Please log in to delete this item'
             });
             setTimeout(() => setInterestMessage(null), 3000);
+            setShowDeleteModal(false);
             return;
         }
 
@@ -230,11 +240,11 @@ function ItemDetail() {
             });
             
             if (response.status === 200 || response.status === 204) {
+                setShowDeleteModal(false);
                 setInterestMessage({
                     type: 'success',
                     text: 'Item deleted successfully. Redirecting...'
                 });
-                // Redirect to items list after 2 seconds
                 setTimeout(() => navigate('/items'), 2000);
             }
         } catch (err) {
@@ -256,6 +266,7 @@ function ItemDetail() {
 
             // Clear error message after 5 seconds
             setTimeout(() => setInterestMessage(null), 5000);
+            setShowDeleteModal(false);
         } finally {
             setDeleteLoading(false);
         }
@@ -369,6 +380,20 @@ function ItemDetail() {
                     from {
                         opacity: 0;
                         transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
                     }
                     to {
                         opacity: 1;
@@ -526,11 +551,7 @@ function ItemDetail() {
                                         <span>Modify Item</span>
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            if (window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
-                                                handleDeleteItem();
-                                            }
-                                        }}
+                                        onClick={handleDeleteClick}
                                         disabled={deleteLoading}
                                         style={{
                                             display: 'flex',
@@ -561,24 +582,8 @@ function ItemDetail() {
                                             }
                                         }}
                                     >
-                                        {deleteLoading ? (
-                                            <>
-                                                <div style={{
-                                                    width: '1rem',
-                                                    height: '1rem',
-                                                    border: '2px solid #ffffff',
-                                                    borderTop: '2px solid transparent',
-                                                    borderRadius: '50%',
-                                                    animation: 'spin 0.8s linear infinite'
-                                                }}></div>
-                                                <span>Deleting...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span>🗑️</span>
-                                                <span>Delete Item</span>
-                                            </>
-                                        )}
+                                        <span>🗑️</span>
+                                        <span>Delete Item</span>
                                     </button>
                                 </div>
                             ) : (
@@ -995,6 +1000,136 @@ function ItemDetail() {
                     </div>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '2rem',
+                        maxWidth: '400px',
+                        width: '90%',
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                        animation: 'slideUp 0.3s ease-out'
+                    }}>
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{ 
+                                fontSize: '3rem', 
+                                marginBottom: '1rem'
+                            }}>
+                                ⚠️
+                            </div>
+                            <h3 style={{ 
+                                color: '#213547', 
+                                margin: '0 0 0.5rem 0',
+                                fontSize: '1.25rem'
+                            }}>
+                                Delete Item?
+                            </h3>
+                            <p style={{ 
+                                color: '#6c757d', 
+                                margin: 0,
+                                fontSize: '0.95rem'
+                            }}>
+                                Are you sure you want to delete "<strong>{item.name}</strong>"? 
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                        
+                        <div style={{
+                            display: 'flex',
+                            gap: '1rem',
+                            justifyContent: 'center'
+                        }}>
+                            <button
+                                onClick={handleDeleteCancel}
+                                disabled={deleteLoading}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    backgroundColor: '#f8f9fa',
+                                    color: '#495057',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '8px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    opacity: deleteLoading ? 0.6 : 1
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!deleteLoading) {
+                                        e.target.style.backgroundColor = '#e9ecef';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = '#f8f9fa';
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteConfirm}
+                                disabled={deleteLoading}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    background: deleteLoading 
+                                        ? '#adb5bd' 
+                                        : 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '1rem',
+                                    fontWeight: '600',
+                                    cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!deleteLoading) {
+                                        e.target.style.transform = 'translateY(-2px)';
+                                        e.target.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.4)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                            >
+                                {deleteLoading ? (
+                                    <>
+                                        <div style={{
+                                            width: '1rem',
+                                            height: '1rem',
+                                            border: '2px solid rgba(255,255,255,0.3)',
+                                            borderTop: '2px solid white',
+                                            borderRadius: '50%',
+                                            animation: 'spin 1s linear infinite'
+                                        }}></div>
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Delete'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
