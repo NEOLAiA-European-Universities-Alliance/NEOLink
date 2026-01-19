@@ -736,7 +736,18 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'manyToMany',
       'api::seller.seller'
     >;
-    isced_code: Schema.Attribute.String;
+    isced_broad_field: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::isced-broad-field.isced-broad-field'
+    >;
+    isced_detailed_field: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::isced-detailed-field.isced-detailed-field'
+    >;
+    isced_narrow_field: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::isced-narrow-field.isced-narrow-field'
+    >;
     item_category: Schema.Attribute.Relation<
       'oneToOne',
       'api::item-category.item-category'

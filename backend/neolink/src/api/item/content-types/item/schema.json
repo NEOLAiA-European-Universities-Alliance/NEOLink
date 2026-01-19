@@ -28,9 +28,6 @@
     "expiration": {
       "type": "date"
     },
-    "isced_code": {
-      "type": "string"
-    },
     "start_date": {
       "type": "date"
     },
@@ -95,12 +92,12 @@
       "relation": "oneToOne",
       "target": "api::university.university"
     },
-  "interested_users": {
-    "type": "relation",
-    "relation": "manyToMany",
-    "target": "api::seller.seller",
-    "inversedBy": "interested_items"
-  },
+    "interested_users": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::seller.seller",
+      "inversedBy": "interested_items"
+    },
     "second_level_structure": {
       "type": "relation",
       "relation": "oneToOne",
@@ -115,6 +112,21 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::seller.seller"
+    },
+    "isced_broad_field": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::isced-broad-field.isced-broad-field"
+    },
+    "isced_narrow_field": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::isced-narrow-field.isced-narrow-field"
+    },
+    "isced_detailed_field": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::isced-detailed-field.isced-detailed-field"
     }
   }
 }
