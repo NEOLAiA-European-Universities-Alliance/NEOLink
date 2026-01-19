@@ -5,8 +5,6 @@ const EmailForm = ({ onNext, privacy_policy, accept_policy_message }) => {
     const [isValid, setIsValid] = useState(true);
     const [isPolicyAccepted, setIsPolicyAccepted] = useState(false);
     const [policyMessage, setPolicyMessage] = useState('');
-    const [isSecondPolicyAccepted, setIsSecondPolicyAccepted] = useState(false);
-    const [secondPolicyMessage, setSecondPolicyMessage] = useState('');
 
     const handle_submit = (e) => {
         e.preventDefault();
@@ -15,17 +13,10 @@ const EmailForm = ({ onNext, privacy_policy, accept_policy_message }) => {
         let hasErrors = false;
 
         if (!isPolicyAccepted) {
-            setPolicyMessage('You must agree that your information will be published as OPEN DATA (except for the email address)');
+            setPolicyMessage('You must accept our Privacy Policy and Data Use License Agreement in order to submit your information. \nPlease note that your data will be used strictly for institutional, academic, and organisational purposes and will not be made publicly available. \nEmail addresses will remain confidential.\n');
             hasErrors = true;
         } else {
             setPolicyMessage('');
-        }
-
-        if (!isSecondPolicyAccepted) {
-            setSecondPolicyMessage('You must accept the privacy policy in order to continue');
-            hasErrors = true;
-        } else {
-            setSecondPolicyMessage('');
         }
 
         if (!regex.test(email)) {
@@ -53,57 +44,46 @@ const EmailForm = ({ onNext, privacy_policy, accept_policy_message }) => {
                 {privacy_policy}
             </div>
 
-            {/* Checkboxes */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            {/* Checkbox with Policy Agreement */}
+            <div style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
                 <label style={{ 
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    marginBottom: '1rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr',
+                    alignItems: 'start',
+                    gap: '0.75rem',
                     cursor: 'pointer',
-                    gap: '0.5rem'
+                    marginBottom: '1rem'
                 }}>
                     <input
                         type="checkbox"
                         checked={isPolicyAccepted}
                         onChange={(e) => setIsPolicyAccepted(e.target.checked)}
-                        style={{ marginTop: '0.25rem', flexShrink: 0 }}
+                        style={{ 
+                            marginTop: '0.2rem',
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            accentColor: '#7c6fd6'
+                        }}
                     />
-                    <span style={{ fontSize: '0.9rem' }}>{accept_policy_message}</span>
+                    <span style={{ 
+                        fontSize: '0.9rem',
+                        lineHeight: '1.5',
+                        color: '#555'
+                    }}>
+                        {accept_policy_message}
+                    </span>
                 </label>
                 {policyMessage && (
                     <div style={{ 
                         color: '#dc3545',
                         fontSize: '0.85rem',
-                        marginTop: '0.25rem',
-                        marginLeft: '1.5rem'
+                        marginTop: '0.5rem',
+                        marginLeft: '1.75rem',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-line'
                     }}>
                         {policyMessage}
-                    </div>
-                )}
-
-                <label style={{ 
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    marginBottom: '1rem',
-                    cursor: 'pointer',
-                    gap: '0.5rem'
-                }}>
-                    <input
-                        type="checkbox"
-                        checked={isSecondPolicyAccepted}
-                        onChange={(e) => setIsSecondPolicyAccepted(e.target.checked)}
-                        style={{ marginTop: '0.25rem', flexShrink: 0 }}
-                    />
-                    <span style={{ fontSize: '0.9rem' }}>I accept the privacy policy</span>
-                </label>
-                {secondPolicyMessage && (
-                    <div style={{ 
-                        color: '#dc3545',
-                        fontSize: '0.85rem',
-                        marginTop: '0.25rem',
-                        marginLeft: '1.5rem'
-                    }}>
-                        {secondPolicyMessage}
                     </div>
                 )}
             </div>
@@ -122,7 +102,8 @@ const EmailForm = ({ onNext, privacy_policy, accept_policy_message }) => {
                         borderRadius: '8px',
                         fontSize: '1rem',
                         outline: 'none',
-                        transition: 'border-color 0.2s'
+                        transition: 'border-color 0.2s',
+                        boxSizing: 'border-box'
                     }}
                     onFocus={(e) => {
                         if (isValid) e.target.style.borderColor = '#7c6fd6';

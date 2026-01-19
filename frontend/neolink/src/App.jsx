@@ -10,6 +10,7 @@ import Items from './pages/items.jsx';
 import ItemDetail from './pages/item_detail.jsx';
 import EditItem from './pages/edit_item.jsx';
 import MyItems from './pages/myitems.jsx';
+import PrivacyPolicy from './pages/privacy_policy.jsx';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route basename={'/neolink'} path="/items/:documentId" element={<ItemDetail />} />
           <Route basename={'/neolink'} path="/items/:documentId/edit" element={<EditItem />} />
           <Route basename={'/neolink'} path="/my-items" element={<MyItems />} />
+          <Route basename={'/neolink'} path="/privacy_policy" element={<PrivacyPolicy />} />
         </Routes>
       </Router>
   );
