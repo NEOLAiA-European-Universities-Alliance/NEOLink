@@ -2,8 +2,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useState, useEffect } from "react";
 
-const logo_neolaia = "/logo.png";
-const eu_logo = "/eu_logo.png";
+const logo_neolaia = `${import.meta.env.BASE_URL}logo.png`;
+const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 
 function Navbar({ token }) {
     const navigate = useNavigate();

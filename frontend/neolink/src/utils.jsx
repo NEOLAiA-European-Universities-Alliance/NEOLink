@@ -18,11 +18,11 @@ function token_is_valid(){
 }
 
 function getCategoryIcon(categoryName) {
-    const bip_logo = "/bip.png"
-    const coil_logo = "/coil.png"
-    const focus_logo = "/focus.png"
-    const neoteach_logo = "/neoteach.png"
-    const virtual_logo = "/virtual.png"
+    const bip_logo = `${import.meta.env.BASE_URL}bip.png`;
+    const coil_logo = `${import.meta.env.BASE_URL}coil.png`;
+    const focus_logo = `${import.meta.env.BASE_URL}focus.png`;
+    const neoteach_logo = `${import.meta.env.BASE_URL}neoteach.png`;
+    const virtual_logo = `${import.meta.env.BASE_URL}virtual.png`;
     const name = categoryName?.toLowerCase() || '';
     if(name.includes('bip')){
         return bip_logo
