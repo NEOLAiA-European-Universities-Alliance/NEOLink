@@ -55,6 +55,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [dateErrors, setDateErrors] = useState({});
 
     // Item status options
     const itemStatusOptions = [
@@ -78,6 +79,25 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
             .split(' ')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
+    };
+
+    // Date validation function
+    const validateDates = (startDate, endDate, expirationDate) => {
+        const errors = {};
+        
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            errors.end_date = 'End date cannot be before start date';
+        }
+        
+        if (startDate && expirationDate && new Date(startDate) > new Date(expirationDate)) {
+            errors.expiration = 'Expiration date cannot be before start date';
+        }
+        
+        if (endDate && expirationDate && new Date(expirationDate) < new Date(endDate)) {
+            errors.expiration = 'Expiration date cannot be before end date';
+        }
+        
+        return errors;
     };
 
     // Initial load
@@ -129,6 +149,16 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
             initializeForm();
         }
     }, [token]);
+
+    // Validate dates whenever they change
+    useEffect(() => {
+        const errors = validateDates(
+            formData.start_date,
+            formData.end_date,
+            formData.expiration
+        );
+        setDateErrors(errors);
+    }, [formData.start_date, formData.end_date, formData.expiration]);
 
     // Load first level structures based on university
     useEffect(() => {
@@ -373,6 +403,13 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Check if there are any date validation errors
+        if (Object.keys(dateErrors).length > 0) {
+            setError("Please fix the date validation errors before proceeding.");
+            return;
+        }
+        
         // Pass form data to parent and move to step 3
         onNext(formData);
     };
@@ -413,6 +450,68 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
+                }
+                
+                .info-tooltip {
+                    position: relative;
+                    display: inline-block;
+                    margin-left: 0.5rem;
+                }
+                
+                .info-tooltip .tooltip-icon {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 50%;
+                    background-color: #7c6fd6;
+                    color: white;
+                    font-size: 12px;
+                    font-weight: bold;
+                    cursor: help;
+                    transition: all 0.2s;
+                }
+                
+                .info-tooltip .tooltip-icon:hover {
+                    background-color: #6b5fc5;
+                    transform: scale(1.1);
+                }
+                
+                .info-tooltip .tooltip-text {
+                    visibility: hidden;
+                    width: 280px;
+                    background-color: #2d3748;
+                    color: #fff;
+                    text-align: left;
+                    border-radius: 8px;
+                    padding: 0.75rem;
+                    position: absolute;
+                    z-index: 1000;
+                    bottom: 125%;
+                    left: 50%;
+                    margin-left: -140px;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                }
+                
+                .info-tooltip .tooltip-text::after {
+                    content: "";
+                    position: absolute;
+                    top: 100%;
+                    left: 50%;
+                    margin-left: -5px;
+                    border-width: 5px;
+                    border-style: solid;
+                    border-color: #2d3748 transparent transparent transparent;
+                }
+                
+                .info-tooltip:hover .tooltip-text {
+                    visibility: visible;
+                    opacity: 1;
                 }
             `}</style>
             
@@ -667,7 +766,9 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 }}>
                                     {shouldShowField('start_date', categoryName) && (
                                         <div>
-                                            <label style={labelStyle}> Start Date <span style={{ color: '#dc3545' }}>*</span></label>
+                                            <label style={labelStyle}>
+                                                Start Date <span style={{ color: '#dc3545' }}>*</span>
+                                            </label>
                                             <input
                                                 type="date"
                                                 name="start_date"
@@ -681,30 +782,74 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
                                     {shouldShowField('end_date', categoryName) && (
                                         <div>
-                                            <label style={labelStyle}>End Date <span style={{ color: '#dc3545' }}>*</span></label>
+                                            <label style={labelStyle}>
+                                                End Date 
+                                                <span style={{ color: '#dc3545' }}>*</span>
+                                                <div className="info-tooltip">
+                                                    <span className="tooltip-icon">i</span>
+                                                    <span className="tooltip-text">
+                                                        The end date represents when the activity (course, event, etc.) concludes. This is the last day of the actual activity.
+                                                    </span>
+                                                </div>
+                                            </label>
                                             <input
                                                 type="date"
                                                 name="end_date"
                                                 value={formData.end_date}
                                                 onChange={handleInputChange}
-                                                style={inputStyle}
+                                                style={{
+                                                    ...inputStyle,
+                                                    borderColor: dateErrors.end_date ? '#dc3545' : '#dee2e6'
+                                                }}
                                                 required
                                             />
+                                            {dateErrors.end_date && (
+                                                <small style={{ 
+                                                    display: 'block',
+                                                    marginTop: '0.25rem',
+                                                    fontSize: '0.85rem',
+                                                    color: '#dc3545'
+                                                }}>
+                                                    {dateErrors.end_date}
+                                                </small>
+                                            )}
                                         </div>
                                     )}
                                 </div>
 
                                 {shouldShowField('expiration', categoryName) && (
                                     <div style={{ marginBottom: '1.5rem' }}>
-                                        <label style={labelStyle}>Expiration Date <span style={{ color: '#dc3545' }}>*</span></label>
+                                        <label style={labelStyle}>
+                                            Expiration Date 
+                                            <span style={{ color: '#dc3545' }}>*</span>
+                                            <div className="info-tooltip">
+                                                <span className="tooltip-icon">i</span>
+                                                <span className="tooltip-text">
+                                                    The expiration date is when this listing becomes inactive on the platform. It should be on or after the end date to give users time to view and engage with the item after it concludes.
+                                                </span>
+                                            </div>
+                                        </label>
                                         <input
                                             type="date"
                                             name="expiration"
                                             value={formData.expiration}
                                             onChange={handleInputChange}
-                                            style={inputStyle}
+                                            style={{
+                                                ...inputStyle,
+                                                borderColor: dateErrors.expiration ? '#dc3545' : '#dee2e6'
+                                            }}
                                             required
                                         />
+                                        {dateErrors.expiration && (
+                                            <small style={{ 
+                                                display: 'block',
+                                                marginTop: '0.25rem',
+                                                fontSize: '0.85rem',
+                                                color: '#dc3545'
+                                            }}>
+                                                {dateErrors.expiration}
+                                            </small>
+                                        )}
                                     </div>
                                 )}
                             </>
