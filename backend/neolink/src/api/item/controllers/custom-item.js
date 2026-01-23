@@ -156,8 +156,20 @@ module.exports = {
                         item_category,
                         expiration,
                         erc_area,
-                        erc_panel,
-                        erc_keyword: erc_keyword,
+                        ...(erc_panel && {
+                            erc_panel: {
+                                connect: [
+                                    { documentId: erc_panel }
+                                ]
+                            }
+                        }),
+                        ...(erc_keyword && {
+                            erc_keyword: {
+                                connect: [
+                                    { documentId: erc_keyword }
+                                ]
+                            }
+                        }),
                         start_date,
                         learning_outcomes,
                         multimedial_material_provided: multimediarial_material_provided,
