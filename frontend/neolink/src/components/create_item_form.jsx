@@ -825,7 +825,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                             <div className="info-tooltip">
                                                 <span className="tooltip-icon">i</span>
                                                 <span className="tooltip-text">
-                                                    The expiration date is when this listing becomes inactive on the platform. It should be on or after the end date to give users time to view and engage with the item after it concludes.
+                                                    The expiration date is when this listing becomes expired on the platform. It should be on or after the end date to give users time to view and engage with the item after it concludes.
                                                 </span>
                                             </div>
                                         </label>
