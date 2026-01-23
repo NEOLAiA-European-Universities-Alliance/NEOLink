@@ -155,7 +155,7 @@ module.exports = {
                         description,
                         item_category,
                         expiration,
-                        erc_area,
+                        ...(erc_area && erc_area.trim() !== '' && { erc_area }),
                         ...(erc_panel && {
                             erc_panel: {
                                 connect: [
