@@ -40,10 +40,19 @@ services:
       API_TOKEN_SALT: ${API_TOKEN_SALT}
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
       APP_KEYS: ${APP_KEYS}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
+      DISCOURSE_URL: ${DISCOURSE_URL}
+      DISCOURSE_API_TOKEN: ${DISCOURSE_API_TOKEN}
+      ORH_API_URL: ${ORH_API_URL}
+      HOST_MAIL: ${HOST_MAIL}
+      USER_MAIL: ${USER_MAIL}
+      PASS_MAIL: ${PASS_MAIL}
+      JWT_SECRET_CUSTOM_AUTH: ${JWT_SECRET_CUSTOM_AUTH}
+      JWT_EXPIRES_CUSTOM_AUTH_IN: ${JWT_EXPIRES_CUSTOM_AUTH_IN}
       HOST: 0.0.0.0
       PORT: 1337
     volumes:
-      - strapi_uploads:/app/public/uploads
+      - strapi_public:/app/public
     ports:
       - "1337:1337"
     networks:
@@ -74,4 +83,4 @@ networks:
 
 volumes:
   postgres_data:
-  strapi_uploads:
+  strapi_public:
