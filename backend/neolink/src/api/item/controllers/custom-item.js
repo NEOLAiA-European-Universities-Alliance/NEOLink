@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { connect } = require('http2');
 const { disconnect } = require('cluster');
 module.exports = {
-    async create(ctx, next){
+   async create(ctx, next){
         try{
             const { 
                 item_status, 
@@ -36,6 +36,77 @@ module.exports = {
             const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
             const email = ctx.request.body.data.email
             const user_id = ctx.request.body.data.user_id
+            
+            // First, create the entry in Strapi DB
+            let entry = await strapi.entityService.create("api::item.item", {
+                data:{
+                    seller: user_id.toString(),
+                    item_status,
+                    name,
+                    description,
+                    item_category,
+                    expiration,
+                    ...(erc_area && erc_area.trim() !== '' && { erc_area }),
+                    ...(erc_panel && {
+                        erc_panel: {
+                            connect: [
+                                { documentId: erc_panel }
+                            ]
+                        }
+                    }),
+                    ...(erc_keyword && {
+                        erc_keyword: {
+                            connect: [
+                                { documentId: erc_keyword }
+                            ]
+                        }
+                    }),
+                    start_date,
+                    learning_outcomes,
+                    multimedial_material_provided: multimediarial_material_provided,
+                    end_date,
+                    languages,
+                    speakers,
+                    pedagogical_objectives,
+                    level_of_study,
+                    university,
+                    first_level_structure: {
+                        connect: [
+                            { documentId: first_level_structure }
+                        ]
+                    },
+                    ...(second_level_structure && {
+                        second_level_structure: {
+                            connect: [
+                                { documentId: second_level_structure }
+                            ]
+                        }
+                    }),
+                    ...(isced_broad_field && {
+                        isced_broad_field: {
+                            connect: [
+                                { documentId: isced_broad_field }
+                            ]
+                        }
+                    }),
+                    ...(isced_narrow_field && {
+                        isced_narrow_field: {
+                            connect: [
+                                { documentId: isced_narrow_field }
+                            ]
+                        }
+                    }),
+                    ...(isced_detailed_field && {
+                        isced_detailed_field: {
+                            connect: [
+                                { documentId: isced_detailed_field }
+                            ]
+                        }
+                    }),
+                    seller_name: offered_by,
+                    coverId: cover ? parseInt(cover) : null,
+                }
+            });
             
             try{
                 let virtual_cafe_username = "";
@@ -149,83 +220,6 @@ module.exports = {
                     discourse_category_id = response_cat.data.category.id;
                 }
                 
-                let entry = await strapi.entityService.create("api::item.item", {
-                    data:{
-                        seller: user_id.toString(),
-                        item_status,
-                        name,
-                        description,
-                        item_category,
-                        expiration,
-                        ...(erc_area && erc_area.trim() !== '' && { erc_area }),
-                        ...(erc_panel && {
-                            erc_panel: {
-                                connect: [
-                                    { documentId: erc_panel }
-                                ]
-                            }
-                        }),
-                        ...(erc_keyword && {
-                            erc_keyword: {
-                                connect: [
-                                    { documentId: erc_keyword }
-                                ]
-                            }
-                        }),
-                        start_date,
-                        learning_outcomes,
-                        multimedial_material_provided: multimediarial_material_provided,
-                        end_date,
-                        languages,
-                        speakers,
-                        pedagogical_objectives,
-                        level_of_study,
-                        university,
-                        // First level structure relation
-                        first_level_structure: {
-                            connect: [
-                                { documentId: first_level_structure }
-                            ]
-                        },
-                        // Second level structure relation (optional)
-                        ...(second_level_structure && {
-                            second_level_structure: {
-                                connect: [
-                                    { documentId: second_level_structure }
-                                ]
-                            }
-                        }),
-                        // ISCED Broad Field relation (optional - user can stop here)
-                        ...(isced_broad_field && {
-                            isced_broad_field: {
-                                connect: [
-                                    { documentId: isced_broad_field }
-                                ]
-                            }
-                        }),
-                        // ISCED Narrow Field relation (optional - user can stop here)
-                        ...(isced_narrow_field && {
-                            isced_narrow_field: {
-                                connect: [
-                                    { documentId: isced_narrow_field }
-                                ]
-                            }
-                        }),
-                        // ISCED Detailed Field relation (optional - most specific level)
-                        ...(isced_detailed_field && {
-                            isced_detailed_field: {
-                                connect: [
-                                    { documentId: isced_detailed_field }
-                                ]
-                            }
-                        }),
-                        seller_name: offered_by,
-                        discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
-                        discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
-                        coverId: cover ? parseInt(cover) : null,
-                    }
-                });
-                
                 const topic_payload = {
                     title: `"${name}" has been inserted in the NEOLink platform!`,
                     raw: `${name} has been created and is now available on the NEOLink platform. Check it out!`,
@@ -237,11 +231,22 @@ module.exports = {
                         'Api-Username': 'system'
                     }
                 });
-                return ctx.response.created(entry);
-            } catch (error){
-                console.log("Error creating Discourse group and category: " + error);
-                throw error;
+                
+                entry = await strapi.entityService.update("api::item.item", entry.id, {
+                    data: {
+                        discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
+                        discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
+                    }
+                });
+                
+            } catch (discourseError){
+                console.log("Error creating Discourse group and category: " + discourseError);
+                console.log("Strapi entry created successfully, but Discourse integration failed");
+                // Entry was created in Strapi, so we still return it even if Discourse failed
             }
+            
+            return ctx.response.created(entry);
+            
         } catch (error){
             console.log(error);
             return ctx.internalServerError(error.message);
