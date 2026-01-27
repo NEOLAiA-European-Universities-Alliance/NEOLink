@@ -336,9 +336,10 @@ module.exports = {
                     }
             }
             try{
+                console.log("Adding user to Discourse group:", entry.discourse_group_id, "Username:", virtual_cafe_username);
                 const virtual_cafe_response = await axios.put(
                     `${process.env.DISCOURSE_URL}/groups/${entry.discourse_group_id}/members.json`,
-                    { usernames: user_entry?.virtual_cafe_username || email.split('@')[0] },
+                    { usernames: virtual_cafe_username || email.split('@')[0] },
                     {
                         headers: {
                             'Api-Key': process.env.DISCOURSE_API_TOKEN,

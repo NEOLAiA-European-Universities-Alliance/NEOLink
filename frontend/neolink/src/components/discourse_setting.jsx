@@ -410,7 +410,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                         lineHeight: '1.5'
                                     }}>
                                         <strong>What is the purpose of having a public group?</strong><br />
-                                        Makeing the group public allows anyone on the Virtual Cafè platform to view the discussions happening within the group, but can't post messages unless they show interest in your event on the NEOLink platform.
+                                        Making the group public allows anyone on the Virtual Cafè platform to view the discussions happening within the group, but can't post messages unless they show interest in your event on the NEOLink platform.
                                         In addition, public groups are designed for structured, topic-oriented discussions that are searchable and preserved over time. Content posted within public groups contributes to a durable knowledge base, supports moderation policies, and remains easily discoverable by the wider community. 
                                         Once you have created a public group, you can then create different topics for the same item based on the different themes being discussed for the item you are about to offer on the platform.
                                         For example, for your item, you might have one topic for "General Discussion", "Feedback and Suggestions", and "Technical Support". Each topic can focus on a specific aspect of the item, allowing users to engage in more targeted conversations.
