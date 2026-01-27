@@ -45,10 +45,22 @@ function ItemCard({ item }) {
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
             // Use the medium format if available, otherwise use the original
-            if (coverImage.formats?.small ) {
+            if (coverImage.formats?.small) {
                 console.log("Using medium format for cover image");
                 let img_url = base_url.replace('/api', '');
                 return `${img_url}${coverImage.formats.small.url}`;
+            } else if (coverImage.formats?.thumbnail) {
+                console.log("Using thumbnail format for cover image");
+                let img_url = base_url.replace('/api', '');
+                return `${img_url}${coverImage.formats.thumbnail.url}`;
+            } else if (coverImage.formats?.medium) {
+                console.log("Using medium format for cover image");
+                let img_url = base_url.replace('/api', '');
+                return `${img_url}${coverImage.formats.medium.url}`;
+            } else if (coverImage.formats?.large) {
+                console.log("Using large format for cover image");
+                let img_url = base_url.replace('/api', '');
+                return `${img_url}${coverImage.formats.large.url}`;
             }
             return `${base_url}${coverImage.url}`;
         }

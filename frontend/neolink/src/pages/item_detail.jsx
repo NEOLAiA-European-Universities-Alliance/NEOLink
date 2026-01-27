@@ -847,6 +847,7 @@ function ItemDetail() {
                                 Description
                             </h2>
                             <p style={{
+                                textAlign: 'justify',
                                 fontSize: '1.1rem',
                                 lineHeight: '1.7',
                                 color: '#495057',
@@ -1326,6 +1327,7 @@ function InfoCard({ title, icon, content }) {
                 </h3>
             </div>
             <p style={{
+                textAlign: 'justify',
                 fontSize: '0.95rem',
                 lineHeight: '1.6',
                 color: '#495057',
