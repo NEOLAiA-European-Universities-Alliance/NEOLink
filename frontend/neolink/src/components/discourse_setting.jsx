@@ -12,11 +12,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
         group_name: initialData?.group_name || initialData?.name,
         group_display_name: initialData?.group_display_name || initialData?.name,
         group_description: initialData?.group_description || initialData?.description,
-        category_name: initialData?.category_name || initialData?.name,
-        category_color: initialData?.category_color || '#7c6fd6',
     });
-
-    const [createCategory, setCreateCategory] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
@@ -30,30 +26,15 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
         }));
     };
 
-    const handleCategoryToggle = () => {
-        setCreateCategory(prev => !prev);
-        // Clear category fields when toggling off
-        if (createCategory) {
-            setFormData(prev => ({
-                ...prev,
-                category_name: '',
-                category_color: '#7c6fd6',
-            }));
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         setError(null);
 
         try {
-            // If not creating category, exclude category fields
-            const submitData = createCategory 
-                ? formData 
-                : {
-                    group_name: formData.group_name,
-                    group_display_name: formData.group_display_name,
+            const submitData = {
+                group_name: formData.group_name,
+                group_display_name: formData.group_display_name,
                     group_description: formData.group_description,
                 };
             
@@ -322,252 +303,6 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                             </div>
                         </div>
 
-                        {/* Category Toggle Section */}
-                        <div style={{
-                            marginBottom: '2rem',
-                            padding: '1.5rem',
-                            backgroundColor: createCategory ? '#f0f0ff' : '#f8f9fa',
-                            borderRadius: '12px',
-                            border: createCategory ? '2px solid #7c6fd6' : '1px solid #e9ecef',
-                            transition: 'all 0.3s ease'
-                        }}>
-                            {/* Toggle Header */}
-                            <div 
-                                onClick={handleCategoryToggle}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    cursor: 'pointer',
-                                    marginBottom: createCategory ? '1.5rem' : '0'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <span style={{
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '50%',
-                                        backgroundColor: createCategory ? '#7c6fd6' : '#6c757d',
-                                        color: 'white',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '0.75rem',
-                                        transition: 'background-color 0.3s'
-                                    }}>🏷️</span>
-                                    <div>
-                                        <h3 style={{
-                                            margin: 0,
-                                            color: '#495057',
-                                            fontSize: '1.1rem',
-                                            fontWeight: '600'
-                                        }}>
-                                            Make the group public
-                                        </h3>
-                                        <small style={{ color: '#6c757d', fontSize: '0.85rem' }}>
-                                            Optional: Make the group public on the Virtual Café, every users in the platform will be able to see the conversation exchanged in the group.
-                                        </small>
-                                    </div>
-                                </div>
-                                
-                                {/* Toggle Switch */}
-                                <div style={{
-                                    width: '50px',
-                                    height: '26px',
-                                    backgroundColor: createCategory ? '#7c6fd6' : '#dee2e6',
-                                    borderRadius: '13px',
-                                    position: 'relative',
-                                    transition: 'background-color 0.3s',
-                                    cursor: 'pointer'
-                                }}>
-                                    <div style={{
-                                        width: '22px',
-                                        height: '22px',
-                                        backgroundColor: 'white',
-                                        borderRadius: '50%',
-                                        position: 'absolute',
-                                        top: '2px',
-                                        left: createCategory ? '26px' : '2px',
-                                        transition: 'left 0.3s',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}></div>
-                                </div>
-                            </div>
-
-                            {/* Help Message */}
-                            {!createCategory && (
-                                <div style={{
-                                    marginTop: '1rem',
-                                    padding: '1rem',
-                                    backgroundColor: '#e7f3ff',
-                                    borderRadius: '8px',
-                                    borderLeft: '4px solid #007bff'
-                                }}>
-                                    <p style={{ 
-                                        margin: 0, 
-                                        color: '#0056b3', 
-                                        fontSize: '0.9rem',
-                                        lineHeight: '1.5'
-                                    }}>
-                                        <strong>What is the purpose of having a public group?</strong><br />
-                                        Making the group public allows anyone on the Virtual Cafè platform to view the discussions happening within the group, but can't post messages unless they show interest in your event on the NEOLink platform.
-                                        In addition, public groups are designed for structured, topic-oriented discussions that are searchable and preserved over time. Content posted within public groups contributes to a durable knowledge base, supports moderation policies, and remains easily discoverable by the wider community. 
-                                        Once you have created a public group, you can then create different topics for the same item based on the different themes being discussed for the item you are about to offer on the platform.
-                                        For example, for your item, you might have one topic for "General Discussion", "Feedback and Suggestions", and "Technical Support". Each topic can focus on a specific aspect of the item, allowing users to engage in more targeted conversations.
-
-                                        <br /><strong>When mantain the group private?</strong><br />
-                                        It is advisable not to create a public group if you are not interested in the benefits described above and your primary goal is simply to get in touch with people interested in your event. 
-                                        In such cases, using the private group feature may be sufficient, as it supports direct and informal conversations and is comparable to a WhatsApp group. 
-                                        However, please note that group chat messages are not persistent: users who join the group at a later time will not be able to view messages exchanged before they joined.
-
-                                        <br /><em>If you're unsure, you can skip this and make the group public later on the Virtual Cafè platform</em>
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Category Fields (Conditional) */}
-                            {createCategory && (
-                                <div style={{
-                                    animation: 'fadeIn 0.3s ease'
-                                }}>
-                                    <style>{`
-                                        @keyframes fadeIn {
-                                            from { opacity: 0; transform: translateY(-10px); }
-                                            to { opacity: 1; transform: translateY(0); }
-                                        }
-                                    `}</style>
-
-                                    {/* Info Box */}
-                                    <div style={{
-                                        marginBottom: '1.5rem',
-                                        padding: '1rem',
-                                        backgroundColor: '#d4edda',
-                                        borderRadius: '8px',
-                                        borderLeft: '4px solid #28a745'
-                                    }}>
-                                        <p style={{ 
-                                            margin: 0, 
-                                            color: '#155724', 
-                                            fontSize: '0.9rem',
-                                            lineHeight: '1.5'
-                                        }}>
-                                            <strong>✓ Creating a public group</strong><br />
-                                            The group created will be public. All the settings below will be applied to the new public group.
-                                        </p>
-                                    </div>
-
-                                    {/* Category Name */}
-                                    <div style={{ marginBottom: '1.25rem' }}>
-                                        <label style={labelStyle}>
-                                            Public Group Name <span style={{ color: '#dc3545' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="category_name"
-                                            value={formData.category_name}
-                                            onChange={handleInputChange}
-                                            placeholder="Enter public group name"
-                                            required={createCategory}
-                                            style={inputStyle}
-                                            onFocus={(e) => e.target.style.borderColor = '#7c6fd6'}
-                                            onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
-                                        />
-                                        <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                            Choose a descriptive name for the public group (e.g., "2026 Virtual Events")
-                                        </small>
-                                    </div>
-
-                                    {/* Category Color */}
-                                    <div style={{ marginBottom: '1.25rem' }}>
-                                        <label style={labelStyle}>
-                                            Public Group Color <span style={{ color: '#dc3545' }}>*</span>
-                                        </label>
-                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                {colorOptions.map((color) => (
-                                                    <div
-                                                        key={color.value}
-                                                        onClick={() => setFormData(prev => ({ ...prev, category_color: color.value }))}
-                                                        title={color.label}
-                                                        style={{
-                                                            width: '36px',
-                                                            height: '36px',
-                                                            borderRadius: '8px',
-                                                            backgroundColor: color.value,
-                                                            cursor: 'pointer',
-                                                            border: formData.category_color === color.value 
-                                                                ? '3px solid #213547' 
-                                                                : '2px solid transparent',
-                                                            transition: 'all 0.2s',
-                                                            boxShadow: formData.category_color === color.value 
-                                                                ? '0 0 0 2px white, 0 0 0 4px ' + color.value
-                                                                : 'none'
-                                                        }}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span style={{ color: '#6c757d', fontSize: '0.85rem' }}>or</span>
-                                                <input
-                                                    type="color"
-                                                    name="category_color"
-                                                    value={formData.category_color}
-                                                    onChange={handleInputChange}
-                                                    style={{
-                                                        width: '50px',
-                                                        height: '36px',
-                                                        padding: '2px',
-                                                        border: '2px solid #dee2e6',
-                                                        borderRadius: '8px',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                />
-                                                <span style={{ 
-                                                    color: '#495057', 
-                                                    fontSize: '0.85rem',
-                                                    fontFamily: 'monospace',
-                                                    backgroundColor: '#f8f9fa',
-                                                    padding: '0.25rem 0.5rem',
-                                                    borderRadius: '4px'
-                                                }}>
-                                                    {formData.category_color}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>
-                                            This color will be used to visually identify the public group in the interface
-                                        </small>
-                                    </div>
-
-                                    {/* Preview */}
-                                    <div style={{
-                                        marginTop: '1.5rem',
-                                        padding: '1rem',
-                                        backgroundColor: 'white',
-                                        borderRadius: '8px',
-                                        border: '1px solid #dee2e6'
-                                    }}>
-                                        <small style={{ color: '#6c757d', fontWeight: '600', marginBottom: '0.5rem', display: 'block' }}>
-                                            Preview:
-                                        </small>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div style={{
-                                                width: '12px',
-                                                height: '40px',
-                                                backgroundColor: formData.category_color,
-                                                borderRadius: '4px'
-                                            }}></div>
-                                            <div>
-                                                <div style={{ fontWeight: '600', color: '#213547' }}>
-                                                    {formData.category_name || 'Public Group Name'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
                         {/* Navigation Buttons */}
                         <div style={{ 
                             display: 'flex',
@@ -641,7 +376,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                         Creating Item...
                                     </span>
                                 ) : (
-                                    `Create Item ${createCategory ? '& Category' : ''} ✓`
+                                    'Create Item'
                                 )}
                             </button>
                         </div>

@@ -35,7 +35,7 @@ module.exports = {
                 cover
             } = ctx.request.body;
             
-            const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
+            const {group_name, group_display_name, group_description} = ctx.request.body;
             const email = ctx.request.body.data.email;
             const user_id = ctx.request.body.data.user_id;
             
@@ -104,7 +104,7 @@ module.exports = {
                     default_notification_level: 3,
                     primary_group: false,
                     skip_validations: true,
-                    messageable_level: 3
+                    //messageable_level: 3
                 };
                 
                 const groupResponse = await axios.post(`${process.env.DISCOURSE_URL}/admin/groups.json`, group_payload, {
@@ -128,21 +128,20 @@ module.exports = {
                     }
                 );
                 
-                // Step 4: Create Discourse category (if requested)
+                // Step 4: Create Discourse category 
                 let discourse_category_name = null;
-                if (category_name && category_name.trim() !== '') {
-                    const category_name_sanitized = category_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '').slice(0, 50);
+                if (group_name && group_name.trim() !== '') {
                     const category_payload = {
-                        name: `[NEOLink] ${category_name_sanitized}`,
-                        color: (category_color || "0088CC").replace('#', ''),
+                        name: `[NEOLink] ${group_name_sanitized}`,
+                        color: ("0088CC").replace('#', ''),
                         text_color: "FFFFFF",
-                        slug: category_name_sanitized,
+                        slug: group_name_sanitized,
                         parent_category_id: null,
                         allow_badges: true,
                         topic_featured_link_allowed: true,
                         permissions: {
                             [group_name_sanitized]: 1,
-                            'everyone': 3,
+                            //'everyone': 3,
                             'staff': 1,
                             'admins': 1,
                         }
@@ -158,29 +157,6 @@ module.exports = {
                     discourse_category_name = categoryResponse.data.category.slug;
                     console.log(categoryResponse.data);
                 }
-                
-                // Step 5: Create announcement topic
-                let topic_payload;
-                if (createdCategoryId){
-                    topic_payload = {
-                        title: `"${name}" has been inserted in the NEOLink platform!`,
-                        raw: `${name} has been created and is now available on the NEOLink platform.\nSee the conversation about the event at the following link: ${process.env.DISCOURSE_URL}/c/${discourse_category_name}!`,
-                        category: 101, 
-                    };
-                } else {
-                    topic_payload = {
-                        title: `"${name}" has been inserted in the NEOLink platform!`,
-                        raw: `${name} has been created and is now available on the NEOLink platform.\nShow interest to the event on NEOLink platform to join the conversation!`,
-                        category: 101, 
-                    };
-                }
-                
-                await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
-                    headers: {
-                        'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                        'Api-Username': 'system'
-                    }
-                });
                 
                 // Step 6: Create Strapi entry (only after Discourse operations succeed)
                 createdEntry = await strapi.entityService.create("api::item.item", {
@@ -252,8 +228,28 @@ module.exports = {
                         coverId: cover ? parseInt(cover) : null,
                         discourse_group_id: createdGroupId ? parseInt(createdGroupId) : null,
                         discourse_category_id: createdCategoryId ? parseInt(createdCategoryId) : null,
+                        category_name: group_name_sanitized,
+                        group_name: group_name_sanitized,
                     }
                 });
+
+                if (createdEntry){
+                    let topic_payload;
+                    if (createdCategoryId){
+                        topic_payload = {
+                            title: `"${name}" has been inserted in the NEOLink platform!`,
+                            raw: `${name} has been created and is now available on the NEOLink platform.\nSee the conversation about the event at the following link: ${process.env.FRONT_END_URL}/c/${discourse_category_name}!`,
+                            category: 101, 
+                        };
+                    }
+                    
+                    await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
+                        headers: {
+                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                            'Api-Username': 'system'
+                        }
+                    });
+                }
                 
                 return ctx.response.created(createdEntry);
                 
