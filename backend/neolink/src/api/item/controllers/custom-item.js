@@ -3,7 +3,7 @@ const seller = require('../../seller/controllers/seller');
 const crypto = require('crypto');
 const { pop } = require('../../../../config/middlewares');
 module.exports = {
-   async create(ctx, next){
+    async create(ctx, next){
         let createdEntry = null;
         let createdGroupId = null;
         let createdCategoryId = null;
@@ -117,19 +117,7 @@ module.exports = {
                 console.log("Group creation response:", groupResponse);
                 createdGroupId = groupResponse.data.basic_group.id;
                 
-                // Step 3: Add user to group
-                await axios.put(
-                    `${process.env.DISCOURSE_URL}/groups/${createdGroupId}/members.json`,
-                    { usernames: virtual_cafe_username },
-                    {
-                        headers: {
-                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                            'Api-Username': 'system'
-                        }
-                    }
-                );
-                
-                // Step 4: Create Discourse category 
+                // Step 3: Create Discourse category 
                 let discourse_category_name = null;
                 if (group_name && group_name.trim() !== '') {
                     const category_payload = {
@@ -158,6 +146,36 @@ module.exports = {
                     discourse_category_name = categoryResponse.data.category.slug;
                     console.log(categoryResponse.data);
                 }
+                
+                // Step 4: Set watching categories BEFORE adding user to group
+                if (createdCategoryId) {
+                    const update_group_payload = {
+                        group: {
+                            watching_category_ids: [createdCategoryId],
+                        }
+                    };
+
+                    await axios.put(`${process.env.DISCOURSE_URL}/groups/${createdGroupId}.json`, update_group_payload, {
+                        headers: {
+                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                            'Api-Username': 'system'
+                        }
+                    });
+                    console.log("Group watching categories set successfully");
+                }
+                
+                // Step 5: Add user to group (AFTER setting category notifications)
+                await axios.put(
+                    `${process.env.DISCOURSE_URL}/groups/${createdGroupId}/members.json`,
+                    { usernames: virtual_cafe_username },
+                    {
+                        headers: {
+                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                            'Api-Username': 'system'
+                        }
+                    }
+                );
+                console.log("User added to group successfully");
                 
                 // Step 6: Create Strapi entry (only after Discourse operations succeed)
                 createdEntry = await strapi.entityService.create("api::item.item", {
@@ -238,7 +256,6 @@ module.exports = {
                 if (createdEntry){
                     console.log("Created Strapi entry:", createdEntry);
                     let topic_payload;
-                    let update_group_payload;
                     
                     if (createdCategoryId){
                         topic_payload = {
@@ -266,69 +283,45 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                             }
                         });
 
-                        update_group_payload = {
-                            group: {
-                                watching_category_ids: [createdCategoryId],
-                            },
-                            update_existing_users: true
+                        // Create a topic to log users when join the group
+                        topic_payload = {
+                            title: `Group Activity - ${name}`,
+                            raw: `${offered_by} have just created the event **${name}** in the NEOLink platform!
+**Description**  
+${description}
+
+**Event Type**  
+${createdEntry.item_category?.name || 'N/A'}
+
+All details about the event are available at the following link:  
+${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
+                            category: createdCategoryId,
+                            auto_track: true,
                         }
-                        const group_update_response = await axios.put(`${process.env.DISCOURSE_URL}/groups/${createdGroupId}.json`, update_group_payload, {
+                        const topic_response = await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
                             }
                         });
+
+                        // Update Strapi entry with the topic ID
+                        await strapi.entityService.update("api::item.item", createdEntry.id, {
+                            data: {
+                                first_topic_id: topic_response.data.topic_id
+                            }
+                        });
                     }
                 }
-                
                 return ctx.response.created(createdEntry);
-                
             } catch (discourseError) {
-                console.error("Error in Discourse operations:", discourseError.response?.data || discourseError.message);
-                
-                // Rollback: Delete created resources in reverse order
-                try {
-                    // Delete Strapi entry if created
-                    if (createdEntry) {
-                        console.log("Rolling back: Deleting Strapi entry", createdEntry.id);
-                        await strapi.entityService.delete("api::item.item", createdEntry.id);
-                    }
-                    
-                    // Delete Discourse category if created
-                    if (createdCategoryId) {
-                        console.log("Rolling back: Deleting Discourse category", createdCategoryId);
-                        await axios.delete(`${process.env.DISCOURSE_URL}/categories/${createdCategoryId}.json`, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
-                    }
-                    
-                    // Delete Discourse group if created
-                    if (createdGroupId) {
-                        console.log("Rolling back: Deleting Discourse group", createdGroupId);
-                        await axios.delete(`${process.env.DISCOURSE_URL}/admin/groups/${createdGroupId}.json`, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
-                    }
-                    
-                    console.log("Rollback completed successfully");
-                } catch (rollbackError) {
-                    console.error("Error during rollback:", rollbackError.response?.data || rollbackError.message);
-                    // Log the rollback error but don't throw - we want to return the original error
-                }
-                
-                // Return error to client
-                return ctx.badRequest(`Failed to create item: ${discourseError.response?.data?.errors?.[0] || discourseError.message}`);
+                console.error("Discourse operation failed:", discourseError.response?.data || discourseError.message);
+                throw discourseError;
             }
-            
-        } catch (error){
-            console.error("Unexpected error:", error);
-            return ctx.internalServerError(error.message);
+        } catch (error) {
+            console.error("Error in create function:", error);
+            // Add your error handling here
+            throw error;
         }
     },
     async interest(ctx, next){
@@ -337,7 +330,7 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
         const {item_id} = ctx.request.body;
 
         const entry = await strapi.db.query("api::item.item").findOne({
-            select: ['discourse_group_id'],
+            select: ['discourse_group_id','first_topic_id'],
             where: { documentId: item_id },
             populate: {
                 interested_users: {
@@ -358,7 +351,7 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
             }
 
             const user_entry = await strapi.db.query("api::seller.seller").findOne({
-                select: ['virtual_cafe_id'],
+                select: ['virtual_cafe_id','full_name'],
                 where: { documentId: user_id },
             });
             
@@ -463,6 +456,20 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                             documentId: item_id
                         });
                         console.log('User added to interested_users relation');
+
+                         // Create a post in the topic to welcome new members
+                         console.log("Entry for post payload:", entry);
+                        const post_payload = {
+                            raw: `${user_entry.full_name} have just showed interest in the event in the NEOLink platform, and is joined the group!`,
+                            topic_id: entry.first_topic_id,
+                        }
+                        await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, post_payload, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                        console.log(post_payload)
                     } catch (error) {
                         console.log("Error adding user to interested_users relation: " + error);
                         return ctx.internalServerError('Error adding user to interested_users relation');

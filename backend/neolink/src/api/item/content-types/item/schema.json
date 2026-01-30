@@ -133,6 +133,9 @@
     },
     "group_name": {
       "type": "string"
+    },
+    "first_topic_id": {
+      "type": "integer"
     }
   }
 }

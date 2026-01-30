@@ -733,6 +733,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'oneToOne',
       'api::first-level-structure.first-level-structure'
     >;
+    first_topic_id: Schema.Attribute.Integer;
     group_name: Schema.Attribute.String;
     interested_users: Schema.Attribute.Relation<
       'manyToMany',
