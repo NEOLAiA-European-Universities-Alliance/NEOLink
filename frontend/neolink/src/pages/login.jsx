@@ -4,7 +4,7 @@ import Auth from "../components/auth";
 import { token_is_valid } from "../utils";
 import PrivacyPolicy from "../components/privacy_policy"; 
 import AcceptPolicy from "../components/accept_policy";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const logo_neolaia = `${import.meta.env.BASE_URL}logoNEOLAiA.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
@@ -13,8 +13,12 @@ const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 function Login(){
     const authContext = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation();
     const { token, loading } = authContext;
     const [token_validity, setTokenValidity] = useState(false);
+    
+    // Get the redirect path from location state, default to personal page
+    const from = location.state?.from || "/personal-page";
     
     useEffect(() => {
         if (loading){
@@ -24,10 +28,10 @@ function Login(){
         setTokenValidity(isValid);
         
         if(token && isValid){
-            // Navigate to personal page with token in state
-            navigate("/personal-page", { state: { token } });
+            // Navigate to the intended destination (either the original page or personal page)
+            navigate(from, { state: { token } });
         }
-    }, [loading, token, navigate]);
+    }, [loading, token, navigate, from]);
     
     return(
         <div style={{ 

@@ -43,13 +43,17 @@ function ItemDetail() {
                 console.error("Error decoding token:", err);
                 setError("Invalid token");
                 localStorage.removeItem("token");
-                setTimeout(() => navigate("/login"), 2000);
+                setTimeout(() => navigate("/login", { 
+                    state: { from: `/items/${documentId}` }
+                }), 2000);
             }
         } else {
             setError("No token provided");
-            setTimeout(() => navigate("/login"), 2000);
+            setTimeout(() => navigate("/login", { 
+                state: { from: `/items/${documentId}` }
+            }), 2000);
         }
-    }, [token, navigate]);
+    }, [token, navigate, documentId]);
 
     useEffect(() => {
         if (userData) {
