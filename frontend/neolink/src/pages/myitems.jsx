@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { base_url } from "../api";
+import { base_url, discourse_url } from "../api";
 import ItemCard from "../components/item_card";
 import Navbar from "../components/navbar";
 
@@ -76,6 +76,12 @@ function MyItems() {
             setError("Failed to delete item. Please try again.");
         } finally {
             setDeleting(false);
+        }
+    };
+
+    const handleVirtualCafe = (categoryName) => {
+        if (categoryName) {
+            window.open(`${discourse_url}/c/${categoryName}`, '_blank');
         }
     };
 
@@ -212,6 +218,44 @@ function MyItems() {
                                         gap: '0.5rem',
                                         zIndex: 10
                                     }}>
+                                        {/* Virtual Café Button */}
+                                        {item.category_name && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleVirtualCafe(item.category_name);
+                                                }}
+                                                style={{
+                                                    width: '36px',
+                                                    height: '36px',
+                                                    borderRadius: '8px',
+                                                    border: 'none',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                                    color: '#667eea',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '1.1rem',
+                                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                                                    e.currentTarget.style.color = 'white';
+                                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
+                                                    e.currentTarget.style.color = '#667eea';
+                                                    e.currentTarget.style.transform = 'scale(1)';
+                                                }}
+                                                title="Open Virtual Café"
+                                            >
+                                                ☕
+                                            </button>
+                                        )}
+
                                         {/* Edit Button */}
                                         <button
                                             onClick={(e) => {
