@@ -204,7 +204,7 @@ function ItemDetail() {
             console.log("Interest recorded successfully:", response.data);
             const message = response.data.message || 'You have been added to the Virtual Cafè discussion group!';
             const groupLink = `${discourse_url}/c/${item.category_name}` || null;
-            
+            console.log("Virtual Café group link:", groupLink); 
             // Store the Virtual Café link
             setVirtualCafeLink(groupLink);
             
