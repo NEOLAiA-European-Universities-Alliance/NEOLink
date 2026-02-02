@@ -145,6 +145,8 @@ VITE_API_URL=http://localhost:1337
 
 ## Usage
 
+At the following link, you can find the complete guide on how to use the NEOLink platform: [https://books.neolaiacampus.eu/books/neolink-guide](https://books.neolaiacampus.eu/books/neolink-guide)
+
 ### User Flow
 
 1. **Login** - Access the platform using your university email (OTP-based authentication)

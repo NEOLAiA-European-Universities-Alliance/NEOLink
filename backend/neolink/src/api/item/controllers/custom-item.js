@@ -2,6 +2,8 @@ const axios = require('axios');
 const seller = require('../../seller/controllers/seller');
 const crypto = require('crypto');
 const { pop } = require('../../../../config/middlewares');
+const { createGroupId } = require('../../../utils/group_id');
+
 module.exports = {
     async create(ctx, next){
         let createdEntry = null;
@@ -36,7 +38,7 @@ module.exports = {
                 cover
             } = ctx.request.body;
             
-            const {group_name, group_display_name, group_description} = ctx.request.body;
+            const {group_display_name, group_description} = ctx.request.body;
             const email = ctx.request.body.data.email;
             const user_id = ctx.request.body.data.user_id;
             
@@ -94,10 +96,10 @@ module.exports = {
                 }
                 
                 // Step 2: Create Discourse group
-                let group_name_sanitized = group_name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 20);
+                let group_name_sanitized = createGroupId(group_display_name);
                 const group_payload = {
                     name: group_name_sanitized,
-                    full_name: `[NEOLink] ${group_display_name || group_name}`,
+                    full_name: `[NEOLink] ${group_display_name}`,
                     visibility_level: 0,
                     bio_raw: group_description || "",
                     public_admission: false,
@@ -119,12 +121,18 @@ module.exports = {
                 
                 // Step 3: Create Discourse category 
                 let discourse_category_name = null;
-                if (group_name && group_name.trim() !== '') {
+                if (group_display_name && group_display_name.trim() !== '') {
+                    const sanitized_category_name = group_display_name.toLowerCase()
+                        .trim()
+                        .replace(/\s+/g, '_')
+                        .replace(/[^a-z0-9_-]/g, '')
+                        .replace(/[-._]{2,}/g, '_')  // Replace sequences of 2+ special chars with single underscore
+                        .slice(0, 40);
                     const category_payload = {
-                        name: `[NEOLink] ${group_name_sanitized}`,
+                        name: `[NEOLink] ${group_display_name.slice(0, 40)}`,
                         color: ("0088CC").replace('#', ''),
                         text_color: "FFFFFF",
-                        slug: group_name_sanitized,
+                        slug: sanitized_category_name,
                         parent_category_id: null,
                         allow_badges: true,
                         topic_featured_link_allowed: true,
@@ -785,13 +793,8 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                 
                 if (discourse_group_id){
                     try{
-                        const group_name_sanitazed = data.name
-                            .toLowerCase()
-                            .trim()
-                            .replace(/\s+/g, '_')
-                            .replace(/[^a-z0-9_-]/g, '')
-                            .replace(/[-._]{2,}/g, '_')  // Replace sequences of 2+ special chars with single underscore
-                            .slice(0, 20);
+                        const group_name_sanitazed = createGroupId(data.name);
+                            console.log("Sanitized group name for update:", group_name_sanitazed);
                         await axios.put(`${process.env.DISCOURSE_URL}/groups/${discourse_group_id}.json`, {
                             name: group_name_sanitazed,
                             full_name: `[NEOLink] ${data.name}`,
@@ -805,7 +808,6 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                         console.log("Error updating Discourse group name: " + error);
                     }
                 }
-                
                 if (discourse_category_id){
                     try{
                         const categories_name_sanitazed = data.name.slice(0, 50);
