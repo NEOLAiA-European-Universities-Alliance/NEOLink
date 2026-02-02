@@ -9,7 +9,6 @@ const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 
 function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
     const [formData, setFormData] = useState({
-        group_name: initialData?.group_name || initialData?.name,
         group_display_name: initialData?.group_display_name || initialData?.name,
         group_description: initialData?.group_description || initialData?.description,
     });
@@ -33,8 +32,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
 
         try {
             const submitData = {
-                group_name: formData.group_name,
-                group_display_name: formData.group_display_name,
+                    group_display_name: formData.group_display_name,
                     group_description: formData.group_description,
                 };
             
@@ -239,28 +237,6 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                 Private Group Information
                             </h3>
 
-                            {/* Group Name */}
-                            <div style={{ marginBottom: '1.25rem' }}>
-                                <label style={labelStyle}>
-                                    Private Group Name <span style={{ color: '#dc3545' }}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="group_name"
-                                    value={formData.group_name.slice(0, 20)}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter a unique identifier for the group"
-                                    required
-                                    maxLength={20}
-                                    style={inputStyle}
-                                    onFocus={(e) => e.target.style.borderColor = '#7c6fd6'}
-                                    onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
-                                />
-                                <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                    This is the internal identifier used by the system, must be unique (max 20 characters).
-                                </small>
-                            </div>
-
                             {/* Group Display Name */}
                             <div style={{ marginBottom: '1.25rem' }}>
                                 <label style={labelStyle}>
@@ -273,12 +249,13 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                     onChange={handleInputChange}
                                     placeholder="Enter the name users will see"
                                     required
+                                    maxLength={40}
                                     style={inputStyle}
                                     onFocus={(e) => e.target.style.borderColor = '#7c6fd6'}
                                     onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
                                 />
                                 <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                    This is the friendly name displayed to users (e.g., "Virtual Cafè 2024")
+                                    This is the friendly name displayed to users (max 40 characters: {formData.group_display_name.length}/40)
                                 </small>
                             </div>
 
