@@ -530,60 +530,6 @@ function ItemDetail() {
                     </div>
                 )}
 
-                {/* Virtual Café Link Banner for Interested Users */}
-                {((isInterested && virtualCafeLink) || (userData?.user_id === item.seller?.documentId && virtualCafeLink)) && (
-                    <div style={{
-                        animation: 'slideDown 0.3s ease-out',
-                        marginBottom: '1rem',
-                        padding: '1rem 1.5rem',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <span style={{ fontSize: '1.5rem' }}>☕</span>
-                            <div>
-                                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
-                                    Virtual Cafè Discussion
-                                </div>
-                                <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-                                    Join the conversation about this item
-                                </div>
-                            </div>
-                        </div>
-                        <a 
-                            href={virtualCafeLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{
-                                padding: '0.75rem 1.5rem',
-                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                color: 'white',
-                                border: '2px solid white',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                fontWeight: '600',
-                                transition: 'all 0.3s',
-                                whiteSpace: 'nowrap'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = 'white';
-                                e.target.style.color = '#667eea';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                                e.target.style.color = 'white';
-                            }}
-                        >
-                            Open Discussion →
-                        </a>
-                    </div>
-                )}
-
                 {/* Back Button and Share Button Row */}
                 <div style={{
                     display: 'flex',
@@ -673,6 +619,60 @@ function ItemDetail() {
                     />
                 </div>
 
+                {/* Virtual Café Link Banner for Interested Users */}
+                {((isInterested && virtualCafeLink) || (userData?.user_id === item.seller?.documentId && virtualCafeLink)) && (
+                    <div style={{
+                        animation: 'slideDown 0.3s ease-out',
+                        marginBottom: '2rem',
+                        padding: '1rem 1.5rem',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>☕</span>
+                            <div>
+                                <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
+                                    Virtual Cafè Discussion
+                                </div>
+                                <div style={{ fontSize: '0.875rem', opacity: 0.9 }}>
+                                    Join the conversation about this item
+                                </div>
+                            </div>
+                        </div>
+                        <a 
+                            href={virtualCafeLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                color: 'white',
+                                border: '2px solid white',
+                                borderRadius: '8px',
+                                textDecoration: 'none',
+                                fontWeight: '600',
+                                transition: 'all 0.3s',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = 'white';
+                                e.target.style.color = '#667eea';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                                e.target.style.color = 'white';
+                            }}
+                        >
+                            Open Discussion →
+                        </a>
+                    </div>
+                )}
+
                 {/* Main Content Card */}
                 <div style={{
                     backgroundColor: 'white',
@@ -735,7 +735,7 @@ function ItemDetail() {
                                         }}
                                     >
                                         <span>✏️</span>
-                                        <span>Modify Item</span>
+                                        <span>Modify</span>
                                     </button>
                                     <button
                                         onClick={handleDeleteClick}
@@ -770,7 +770,7 @@ function ItemDetail() {
                                         }}
                                     >
                                         <span>🗑️</span>
-                                        <span>Delete Item</span>
+                                        <span>Delete</span>
                                     </button>
                                 </div>
                             ) : (

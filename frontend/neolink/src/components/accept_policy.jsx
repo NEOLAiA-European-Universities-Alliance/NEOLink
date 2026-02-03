@@ -9,7 +9,7 @@ const AcceptPolicy = () => {
         }}>
             By completing the form and ticking the box, you confirm that you have read and understood our{' '}
             <a 
-                href="/neolink/privacy_policy" 
+                href="/privacy_policy" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{

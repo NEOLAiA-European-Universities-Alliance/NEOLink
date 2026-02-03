@@ -280,7 +280,7 @@ ${createdEntry.item_category?.name || 'N/A'}
 ${offered_by}
 
 Show your interest to the event on NEOLink at the following link to join the conversation:  
-${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
+${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
                             category: 101, 
                         };
                     
@@ -302,7 +302,7 @@ ${description}
 ${createdEntry.item_category?.name || 'N/A'}
 
 All details about the event are available at the following link:  
-${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
+${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
                             category: createdCategoryId,
                             auto_track: true,
                         }
@@ -468,7 +468,7 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                          // Create a post in the topic to welcome new members
                          console.log("Entry for post payload:", entry);
                         const post_payload = {
-                            raw: `${user_entry.full_name} have just showed interest in the event in the NEOLink platform, and is joined the group!`,
+                            raw: `${user_entry.full_name} have just showed interest in the event in the NEOLink platform, and has joined the group!`,
                             topic_id: entry.first_topic_id,
                         }
                         await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, post_payload, {
