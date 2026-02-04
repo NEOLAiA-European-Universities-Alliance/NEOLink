@@ -315,7 +315,7 @@ ${offered_by}
 See all the details of the event on NEOLink at the following link:  
 ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}
 
-Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/welcome-write-here-first-${group_name_sanitized.replace('_', '-')}}`;
+Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/welcome-write-here-first-${group_name_sanitized.replaceAll('_', '-')}`;
 
                         // Update topic title
                         await axios.put(`${process.env.DISCOURSE_URL}/t/-/${first_topic.id}.json`, {

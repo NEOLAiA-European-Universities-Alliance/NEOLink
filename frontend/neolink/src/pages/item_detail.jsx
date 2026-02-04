@@ -170,7 +170,7 @@ function ItemDetail() {
                 secondLevelStructure: mergedData.secondLevelStructure
             });
             setCoverImage(mergedData.coverImage);
-            setVirtualCafeLink(`${discourse_url}/c/${itemData.category_name}` || null);
+            setVirtualCafeLink(`${discourse_url}/c/${itemData.category_name}/${itemData.discourse_category_id}` || null);
             setLoading(false);
         } catch (err) {
             console.error("Error fetching item details:", err);
