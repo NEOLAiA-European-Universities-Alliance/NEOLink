@@ -160,9 +160,9 @@ function EditItem() {
                     first_level_structure: itemData.first_level_structure?.documentId || '',
                     second_level_structure: itemData.second_level_structure?.documentId || '',
                     offered_by: itemData.seller?.full_name || '',
-                    cover: null,
+                    cover: itemData.coverId || null,
                 });
-
+                console.log(itemData)
                 setLoading(false);
             } catch (err) {
                 console.error("Error loading item:", err);
@@ -397,7 +397,7 @@ function EditItem() {
             updateData.data.isced_detailed_field = formData.isced_detailed_field || null;
 
             // If there's a new cover image, upload it separately
-            let coverId = null
+            let coverId = null;
             if (formData.cover && formData.cover instanceof File) {
                 const fileFormData = new FormData();
                 fileFormData.append('files', formData.cover);
@@ -409,7 +409,7 @@ function EditItem() {
                 `${base_url}/custom-item/update-item/`,{
                     item_id: documentId,
                     ...updateData,
-                    cover: coverId || null,
+                    cover: coverId || item.coverId || null,
                     token: token
                 }
             );

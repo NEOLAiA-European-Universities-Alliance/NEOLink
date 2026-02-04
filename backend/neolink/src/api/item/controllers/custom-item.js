@@ -3,6 +3,8 @@ const seller = require('../../seller/controllers/seller');
 const crypto = require('crypto');
 const { pop } = require('../../../../config/middlewares');
 const { createGroupId } = require('../../../utils/group_id');
+const { transformString } = require('../../../utils/trasform_string');
+const { group } = require('console');
 
 module.exports = {
     async create(ctx, next){
@@ -107,7 +109,6 @@ module.exports = {
                     default_notification_level: 3,
                     primary_group: false,
                     skip_validations: true,
-                    //messageable_level: 3
                 };
                 
                 const groupResponse = await axios.post(`${process.env.DISCOURSE_URL}/admin/groups.json`, group_payload, {
@@ -126,7 +127,7 @@ module.exports = {
                         .trim()
                         .replace(/\s+/g, '_')
                         .replace(/[^a-z0-9_-]/g, '')
-                        .replace(/[-._]{2,}/g, '_')  // Replace sequences of 2+ special chars with single underscore
+                        .replace(/[-._]{2,}/g, '_')
                         .slice(0, 40);
                     const category_payload = {
                         name: `[NEOLink] ${group_display_name.slice(0, 40)}`,
@@ -138,7 +139,6 @@ module.exports = {
                         topic_featured_link_allowed: true,
                         permissions: {
                             [group_name_sanitized]: 1,
-                            //'everyone': 3,
                             'staff': 1,
                             'admins': 1,
                         }
@@ -263,10 +263,38 @@ module.exports = {
 
                 if (createdEntry){
                     console.log("Created Strapi entry:", createdEntry);
-                    let topic_payload;
-                    
+
                     if (createdCategoryId){
-                        topic_payload = {
+                        const concatenated_name = group_display_name + ' ' + new Date().toLocaleString();
+
+                        // Step 7: Create the welcome topic FIRST to get its ID
+                        const welcome_topic_payload = {
+                            title: `Welcome (write here first :slightly_smiling_face:) ${concatenated_name}!`,
+                            raw: `**${offered_by}** have just created the event **${name}** in the NEOLink platform!
+
+Feel free to write here to welcome new members who showed interest in the event and joined the group!`,
+                            category: createdCategoryId,
+                            auto_track: true,
+                        };
+
+                        const welcome_topic_response = await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, welcome_topic_payload, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+
+                        const welcomeTopicId = welcome_topic_response.data.topic_id;
+
+                        // Update Strapi entry with the welcome topic ID
+                        await strapi.entityService.update("api::item.item", createdEntry.id, {
+                            data: {
+                                first_topic_id: welcomeTopicId
+                            }
+                        });
+
+                        // Step 8: Create announcement topic in category 101 with correct welcome topic URL
+                        const announcement_payload = {
                             title: `"${name}" has been successfully published on NEOLink`,
                             raw: `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
 
@@ -283,42 +311,76 @@ Show your interest to the event on NEOLink at the following link to join the con
 ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
                             category: 101, 
                         };
-                    
-                        await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
+
+                        await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, announcement_payload, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
                             }
                         });
 
-                        // Create a topic to log users when join the group
-                        topic_payload = {
-                            title: `Group Activity - ${name}`,
-                            raw: `${offered_by} have just created the event **${name}** in the NEOLink platform!
+                        // Step 9: Update the auto-generated "About" topic in the new category
+                        const topicsResponse = await axios.get(`${process.env.DISCOURSE_URL}/c/${createdCategoryId}.json`, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+
+                        const topics = topicsResponse.data.topic_list.topics;
+                        // Find the "About" topic (the one that's not our welcome topic)
+                        let about_topic = topics.find(t => t.id !== welcomeTopicId);
+
+                        if (about_topic){
+                            const postContent = `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
+
 **Description**  
 ${description}
 
 **Event Type**  
 ${createdEntry.item_category?.name || 'N/A'}
 
-All details about the event are available at the following link:  
-${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
-                            category: createdCategoryId,
-                            auto_track: true,
-                        }
-                        const topic_response = await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
+**Offered by**  
+${offered_by}
 
-                        // Update Strapi entry with the topic ID
-                        await strapi.entityService.update("api::item.item", createdEntry.id, {
-                            data: {
-                                first_topic_id: topic_response.data.topic_id
-                            }
-                        });
+See all the details of the event on NEOLink at the following link:  
+${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}
+
+Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${welcomeTopicId}`;
+
+                            // Update topic title
+                            await axios.put(`${process.env.DISCOURSE_URL}/t/-/${about_topic.id}.json`, {
+                                title: `Info about the event "${concatenated_name}"`,
+                                category: createdCategoryId,
+                            }, {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
+                            });
+
+                            // Get the topic details to find the first post ID
+                            const topicDetails = await axios.get(`${process.env.DISCOURSE_URL}/t/${about_topic.id}.json`, {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
+                            });
+                            
+                            const firstPostId = topicDetails.data.post_stream.posts[0].id;
+                            
+                            // Update the first post content with correct welcome topic URL
+                            await axios.put(`${process.env.DISCOURSE_URL}/posts/${firstPostId}.json`, {
+                                post: {
+                                    raw: postContent
+                                }
+                            }, {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
+                            });
+                        }
                     }
                 }
                 return ctx.response.created(createdEntry);
@@ -328,7 +390,6 @@ ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
             }
         } catch (error) {
             console.error("Error in create function:", error);
-            // Add your error handling here
             throw error;
         }
     },
@@ -790,29 +851,42 @@ ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
             if (data.name && data.name !== entry.name){
                 const discourse_group_id = entry.discourse_group_id;
                 const discourse_category_id = entry.discourse_category_id;
-                
+                let group_name_sanitazed;
                 if (discourse_group_id){
                     try{
-                        const group_name_sanitazed = createGroupId(data.name);
-                            console.log("Sanitized group name for update:", group_name_sanitazed);
-                        await axios.put(`${process.env.DISCOURSE_URL}/groups/${discourse_group_id}.json`, {
-                            name: group_name_sanitazed,
-                            full_name: `[NEOLink] ${data.name}`,
-                        }, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
+                        group_name_sanitazed = createGroupId(data.name);
+                        console.log("Sanitized group name for update:", group_name_sanitazed);
+                        await axios.put(
+                            `${process.env.DISCOURSE_URL}/groups/${discourse_group_id}.json`, 
+                            {
+                                group: { 
+                                    name: group_name_sanitazed,
+                                    full_name: `[NEOLink] ${data.name}`,
+                                },
+                                update_existing_users : true
+                            }, 
+                            {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
                             }
-                        });
+                        );
                     } catch (error){
                         console.log("Error updating Discourse group name: " + error);
                     }
                 }
                 if (discourse_category_id){
                     try{
-                        const categories_name_sanitazed = data.name.slice(0, 50);
+                        const categories_name_sanitazed = data.name.toLowerCase()
+                            .trim()
+                            .replace(/\s+/g, '_')
+                            .replace(/[^a-z0-9_-]/g, '')
+                            .replace(/[-._]{2,}/g, '_')
+                            .slice(0, 40);
                         await axios.put(`${process.env.DISCOURSE_URL}/categories/${discourse_category_id}.json`, {
-                            name: `[NEOLink] ${categories_name_sanitazed}`,
+                            name: `[NEOLink] ${data.name.slice(0, 40)}`,
+                            slug: categories_name_sanitazed,
                         }, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
@@ -820,6 +894,7 @@ ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
                             }
                         });
                     } catch (error){
+
                         console.log("Error updating Discourse category name: " + error);
                     }
                 }

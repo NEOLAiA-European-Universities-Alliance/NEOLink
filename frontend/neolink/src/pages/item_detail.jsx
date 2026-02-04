@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { base_url, discourse_url } from "../api";
+import { base_url, discourse_url, orh_url } from "../api";
 import { jwtDecode } from "jwt-decode";
 import Navbar from "../components/navbar.jsx";
 import QRCode from "qrcode";
@@ -137,7 +137,6 @@ function ItemDetail() {
             const itemResponse = await axios.get(`${base_url}/items/${documentId}?populate=*`);
             const itemData = itemResponse.data.data;
             setItem(itemData);
-
             // Check if current user is already interested
             if (userData && itemData.interested_users && Array.isArray(itemData.interested_users)) {
                 const userIsInterested = itemData.interested_users.some(
@@ -170,7 +169,7 @@ function ItemDetail() {
                 secondLevelStructure: mergedData.secondLevelStructure
             });
             setCoverImage(mergedData.coverImage);
-            setVirtualCafeLink(`${discourse_url}/c/${itemData.category_name}` || null);
+            setVirtualCafeLink(`${discourse_url}/c/${itemData.category_name}/${itemData.discourse_category_id}` || null);
             setLoading(false);
         } catch (err) {
             console.error("Error fetching item details:", err);
@@ -942,6 +941,42 @@ function ItemDetail() {
                                 </div>
                             </div>
                         )}
+
+                            {item.seller?.orh_id && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>🔬</span>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                            Research Profile
+                                        </div>
+                                        <a 
+                                            href={`${orh_url}/researcher-page?researcher_id=${item.seller.orh_id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                fontWeight: '600',
+                                                color: '#7c6fd6',
+                                                textDecoration: 'none',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.target.style.color = '#5a4fcf';
+                                                e.target.style.textDecoration = 'underline';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.target.style.color = '#7c6fd6';
+                                                e.target.style.textDecoration = 'none';
+                                            }}
+                                        >
+                                            View on the Open Research Hub
+                                            <span style={{ fontSize: '0.875rem' }}>↗</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
 
                         {item.createdAt && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -23,6 +23,7 @@ function getCategoryIcon(categoryName) {
     const focus_logo = `${import.meta.env.BASE_URL}focus.png`;
     const neoteach_logo = `${import.meta.env.BASE_URL}neoteach.png`;
     const virtual_logo = `${import.meta.env.BASE_URL}virtual.png`;
+    const other_logo = `${import.meta.env.BASE_URL}other.png`;
     const name = categoryName?.toLowerCase() || '';
     if(name.includes('bip')){
         return bip_logo
@@ -49,7 +50,7 @@ function getCategoryIcon(categoryName) {
     if (name.includes('thesis') || name.includes('dissertation')) return '📝';
     
     // Default icon
-    return '✨';
+    return other_logo;
 }
 
 
