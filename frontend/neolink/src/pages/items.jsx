@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { base_url } from "../api";
@@ -32,9 +32,26 @@ function ItemsList() {
     });
     const [showFilters, setShowFilters] = useState(false);
     const token = localStorage.getItem("token");
+    const prevSearchRef = useRef(filters.search);
+    const prevLanguagesRef = useRef(filters.languages);
 
     useEffect(() => {
-        fetchItems();
+        const searchChanged = prevSearchRef.current !== filters.search;
+        const languagesChanged = prevLanguagesRef.current !== filters.languages;
+
+        if (languagesChanged || searchChanged) {
+
+            const timer = setTimeout(() => {
+                fetchItems();
+                prevSearchRef.current = filters.search;
+                prevLanguagesRef.current = filters.languages;
+            }, 350)
+
+            return () => clearTimeout(timer);
+
+        } else {
+            fetchItems();
+        }
     }, [filters]);
 
     const fetchItems = async () => {
