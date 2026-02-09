@@ -219,22 +219,22 @@ function PersonalPage() {
                                     </div>
                                 )}
 
-                                {userData.institution && (
+                                {userData.university_name && (
                                     <div style={styles.detailRow}>
                                         <span style={styles.detailIcon}>🏛</span>
                                         <div style={styles.detailContent}>
                                             <span style={styles.detailLabel}>Institution</span>
-                                            <span style={styles.detailValue}>{userData.institution}</span>
+                                            <span style={styles.detailValue}>{userData.university_name}</span>
                                         </div>
                                     </div>
                                 )}
 
-                                {userData.department && (
+                                {userData.first_level_structure && (
                                     <div style={styles.detailRow}>
                                         <span style={styles.detailIcon}>📁</span>
                                         <div style={styles.detailContent}>
                                             <span style={styles.detailLabel}>Department</span>
-                                            <span style={styles.detailValue}>{userData.department}</span>
+                                            <span style={styles.detailValue}>{userData.first_level_structure}</span>
                                         </div>
                                     </div>
                                 )}
