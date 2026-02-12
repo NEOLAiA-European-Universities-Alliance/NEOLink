@@ -1,4 +1,4 @@
-# Quick User Guide
+# Quick NEOLink User Guide
 
 - [What is NEOLAiA?](https://github.com/NEOLAiA-European-Universities-Alliance/NEOLink/wiki/What-is-NEOLink)
 - [Target audience](https://github.com/NEOLAiA-European-Universities-Alliance/NEOLink/wiki/Target-audience)
