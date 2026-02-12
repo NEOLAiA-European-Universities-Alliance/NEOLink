@@ -1,4 +1,8 @@
-# Quick NEOLink User Guide
+# Quick User Guide
+
+<p align="center">
+  <img src="https://github.com/NEOLAiA-European-Universities-Alliance/NEOLink/blob/main/docs/img/logoNEOLink.png" width="50%">
+</p>
 
 - [What is NEOLAiA?](https://github.com/NEOLAiA-European-Universities-Alliance/NEOLink/wiki/What-is-NEOLink)
 - [Target audience](https://github.com/NEOLAiA-European-Universities-Alliance/NEOLink/wiki/Target-audience)
