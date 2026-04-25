@@ -6,6 +6,7 @@
  */
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const { normalizePersonName } = require('../../../utils/normalize_text');
 
 module.exports = {
     /**
@@ -21,19 +22,28 @@ module.exports = {
                 mail: ctx.request.headers['x-shib-mail'],
                 displayName: ctx.request.headers['x-shib-displayname'],
                 givenName: ctx.request.headers['x-shib-givenname'],
+                surname: ctx.request.headers['x-shib-sn'] || ctx.request.headers['x-shib-surname'],
                 affiliation: ctx.request.headers['x-shib-affiliation'] || ctx.request.headers['x-shib-edupersonaffiliation'] || null,
                 persistentId: ctx.request.headers['x-shib-persistentid'] || ctx.request.headers['x-shib-pairwiseid'] || ctx.request.headers['x-shib-edupersonid'] || null,
                 sessionId: ctx.request.headers['x-shib-session-id'],
             };
 
+            const normalizedShibHeaders = {
+                ...shibHeaders,
+                cn: normalizePersonName(shibHeaders.cn),
+                displayName: normalizePersonName(shibHeaders.displayName),
+                givenName: normalizePersonName(shibHeaders.givenName),
+                surname: normalizePersonName(shibHeaders.surname),
+            };
+
             // Validate required attributes
-            if (!shibHeaders.cn && !shibHeaders.mail && !shibHeaders.persistentId) {
+            if (!normalizedShibHeaders.cn && !shibHeaders.mail && !shibHeaders.persistentId) {
                 return ctx.badRequest('Missing required Shibboleth attributes (cn, mail, or persistentId)');
             }
 
             // Use cn or mail as primary identifier
-            const email = shibHeaders.mail || shibHeaders.cn;
-            const uniqueId = shibHeaders.persistentId || shibHeaders.cn || email; // Fallback to email or cn if no persistentId
+            const email = shibHeaders.mail || normalizedShibHeaders.cn;
+            const uniqueId = shibHeaders.persistentId || normalizedShibHeaders.cn || email; // Fallback to email or cn if no persistentId
 
             // Check if user already exists
             let seller = await strapi.db.query('api::seller.seller').findOne({
@@ -50,9 +60,9 @@ module.exports = {
             });
 
             // Build full name from Shibboleth attributes
-            const fullName = shibHeaders.displayName || shibHeaders.cn ||
-                            (shibHeaders.givenName && shibHeaders.surname 
-                                ? `${shibHeaders.givenName} ${shibHeaders.surname}` 
+            const fullName = normalizedShibHeaders.displayName || normalizedShibHeaders.cn ||
+                            (normalizedShibHeaders.givenName && normalizedShibHeaders.surname 
+                                ? `${normalizedShibHeaders.givenName} ${normalizedShibHeaders.surname}` 
                                 : null);
 
             if (seller) {

@@ -6,6 +6,57 @@ const { createGroupId } = require('../../../utils/group_id');
 const { transformString } = require('../../../utils/trasform_string');
 const { group } = require('console');
 
+const normalizeLanguages = (value) => {
+    if (Array.isArray(value)) {
+        const cleaned = value
+            .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+            .filter((entry) => entry.length > 0);
+        return cleaned.length > 0 ? cleaned.join(', ') : null;
+    }
+
+    if (typeof value === 'string') {
+        const cleaned = value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter((entry) => entry.length > 0);
+        return cleaned.length > 0 ? cleaned.join(', ') : null;
+    }
+
+    return null;
+};
+
+const DISCOURSE_TOPIC_TITLE_MAX_LENGTH = 255;
+const DISCOURSE_TOPIC_TITLE_MAX_WORD_LENGTH = 30;
+
+const trimToMaxLength = (value, maxLength) => {
+    if (typeof value !== 'string' || maxLength <= 0) {
+        return '';
+    }
+
+    return value.slice(0, maxLength);
+};
+
+const normalizeTitleValue = (value) => {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return value
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .map((word) => trimToMaxLength(word, DISCOURSE_TOPIC_TITLE_MAX_WORD_LENGTH))
+        .join(' ');
+};
+
+const buildDiscourseTopicTitle = (prefix, dynamicPart, suffix = '') => {
+    const safePrefix = typeof prefix === 'string' ? prefix : '';
+    const safeSuffix = typeof suffix === 'string' ? suffix : '';
+    const safeDynamicPart = normalizeTitleValue(dynamicPart);
+
+    return trimToMaxLength(`${safePrefix}${safeDynamicPart}${safeSuffix}`, DISCOURSE_TOPIC_TITLE_MAX_LENGTH);
+};
+
 module.exports = {
     async create(ctx, next){
         let createdEntry = null;
@@ -215,7 +266,7 @@ module.exports = {
                         learning_outcomes,
                         multimedial_material_provided: multimediarial_material_provided,
                         end_date,
-                        languages,
+                        languages: normalizeLanguages(languages),
                         speakers,
                         pedagogical_objectives,
                         level_of_study,
@@ -269,12 +320,17 @@ module.exports = {
                     console.log("Created Strapi entry:", createdEntry);
 
                     if (createdCategoryId){
-                        const nameForTopic = group_display_name.slice(0, 15);
-                        const concatenated_name = nameForTopic + ' ' + new Date().toLocaleString();
+                        const topicDateLabel = new Date().toLocaleString();
+                        const nameForTopic = normalizeTitleValue(group_display_name);
+                        const concatenated_name = normalizeTitleValue(`${nameForTopic} ${topicDateLabel}`);
 
                         // Step 7: Create the welcome topic FIRST to get its ID
                         const welcome_topic_payload = {
-                            title: `Welcome (write here first :slightly_smiling_face:) ${concatenated_name}!`,
+                            title: buildDiscourseTopicTitle(
+                                'Welcome (write here first :slightly_smiling_face:) ',
+                                concatenated_name,
+                                '!'
+                            ),
                             raw: `**${offered_by}** has just created the event **${name}** in the NEOLink platform!
 
 Feel free to write here to welcome new members who show interest in the event and join the group!`,
@@ -299,9 +355,9 @@ Feel free to write here to welcome new members who show interest in the event an
                         });
 
                         // Step 8: Create announcement topic in category 101 with correct welcome topic URL
-                        const nameForAnnouncement = name.slice(0, 15);
+                        const nameForAnnouncement = normalizeTitleValue(name);
                         const announcement_payload = {
-                            title: `"${nameForAnnouncement}" has been successfully published on NEOLink`,
+                            title: buildDiscourseTopicTitle('"', nameForAnnouncement, '" has been successfully published on NEOLink'),
                             raw: `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
 
 **Description**  
@@ -365,7 +421,7 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
 
                             // Update topic title
                             await axios.put(`${process.env.DISCOURSE_URL}/t/-/${about_topic.id}.json`, {
-                                title: `Info about the event "${concatenated_name}"`,
+                                title: buildDiscourseTopicTitle('Info about the event "', concatenated_name, '"'),
                                 category: createdCategoryId,
                             }, {
                                 headers: {
@@ -798,7 +854,7 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                 learning_outcomes: data.learning_outcomes || null,
                 multimedial_material_provided: data.multimediarial_material_provided || null,
                 end_date: data.end_date || null,
-                languages: data.languages || null,
+                languages: normalizeLanguages(data.languages),
                 speakers: data.speakers || null,
                 pedagogical_objectives: data.pedagogical_objectives || null,
                 level_of_study: data.level_of_study || null,

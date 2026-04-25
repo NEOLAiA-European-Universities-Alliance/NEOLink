@@ -31,7 +31,7 @@ const sanitizeCriteria = (criteria = {}) => {
 
 const RELATION_CRITERIA_MAP = {
     category_id: { uid: 'api::item-category.item-category', field: 'name' },
-    university: { uid: 'api::university.university', field: 'name' },
+    university: { uid: 'api::university.university', field: 'university_name' },
     erc_panel: { uid: 'api::erc-panel.erc-panel', field: 'name' },
     erc_keyword: { uid: 'api::erc-keyword.erc-keyword', field: 'name' },
 };

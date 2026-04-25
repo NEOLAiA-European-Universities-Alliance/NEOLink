@@ -11,6 +11,26 @@ const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 const ITEM_NAME_MAX_LENGTH = 60;
 
+const parseLanguages = (value) => {
+    if (Array.isArray(value)) {
+        return value.filter((entry) => typeof entry === 'string' && entry.trim() !== '');
+    }
+    if (typeof value === 'string') {
+        return value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+    }
+    return [];
+};
+
+const serializeLanguages = (values) => {
+    if (!Array.isArray(values)) {
+        return '';
+    }
+    return values.map((entry) => entry.trim()).filter(Boolean).join(', ');
+};
+
 function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }) {
     const formRef = useRef(null);
     const fieldRefs = useRef({});
@@ -31,7 +51,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         learning_outcomes: initialData?.learning_outcomes || '',
         multimediarial_material_provided: initialData?.multimediarial_material_provided || '',
         end_date: initialData?.end_date || '',
-        languages: initialData?.languages || '',
+        languages: parseLanguages(initialData?.languages),
         speakers: initialData?.speakers || '',
         pedagogical_objectives: initialData?.pedagogical_objectives || '',
         level_of_study: initialData?.level_of_study || '',
@@ -88,7 +108,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         start_date: 'Start date',
         end_date: 'End date',
         expiration: 'Expiration date',
-        languages: 'Language',
+        languages: 'Languages',
         university: 'University',
         first_level_structure: 'First level structure',
         second_level_structure: 'Second level structure'
@@ -164,7 +184,11 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
         requiredFields.forEach(field => {
             const value = formData[field];
-            const isEmpty = typeof value === 'string' ? value.trim() === '' : !value;
+            const isEmpty = Array.isArray(value)
+                ? value.length === 0
+                : typeof value === 'string'
+                    ? value.trim() === ''
+                    : !value;
             if (isEmpty) {
                 validationErrors[field] = `${fieldLabels[field] || field} is required.`;
             }
@@ -537,7 +561,10 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         setError(null);
         
         // Pass form data to parent and move to step 3
-        onNext(formData);
+        onNext({
+            ...formData,
+            languages: serializeLanguages(formData.languages)
+        });
     };
 
     if (loading) {
@@ -1341,10 +1368,12 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 }}
                                             >
                                                 <span style={{ 
-                                                    color: formData.languages ? '#495057' : '#6c757d',
+                                                    color: formData.languages.length > 0 ? '#495057' : '#6c757d',
                                                     flex: 1
                                                 }}>
-                                                    {formData.languages || 'Select a language'}
+                                                    {formData.languages.length > 0
+                                                        ? formData.languages.join(', ')
+                                                        : 'Select one or more languages'}
                                                 </span>
                                                 <span style={{ 
                                                     fontSize: '0.8rem',
@@ -1415,39 +1444,40 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                                 <div
                                                                     key={lang.code}
                                                                     onClick={() => {
+                                                                        const alreadySelected = formData.languages.includes(lang.name);
                                                                         setFormData(prev => ({
                                                                             ...prev,
-                                                                            languages: lang.name
+                                                                            languages: alreadySelected
+                                                                                ? prev.languages.filter((entry) => entry !== lang.name)
+                                                                                : [...prev.languages, lang.name]
                                                                         }));
                                                                         clearFieldError('languages');
                                                                         if (error) {
                                                                             setError(null);
                                                                         }
-                                                                        setIsLanguageDropdownOpen(false);
-                                                                        setLanguageSearch('');
                                                                     }}
                                                                     style={{
                                                                         padding: '0.75rem 1rem',
                                                                         cursor: 'pointer',
-                                                                        backgroundColor: formData.languages === lang.name ? '#f0f0ff' : 'transparent',
-                                                                        borderLeft: formData.languages === lang.name ? '3px solid #7c6fd6' : '3px solid transparent',
+                                                                        backgroundColor: formData.languages.includes(lang.name) ? '#f0f0ff' : 'transparent',
+                                                                        borderLeft: formData.languages.includes(lang.name) ? '3px solid #7c6fd6' : '3px solid transparent',
                                                                         transition: 'all 0.2s',
                                                                         fontSize: '0.9rem',
                                                                         color: '#495057'
                                                                     }}
                                                                     onMouseEnter={(e) => {
-                                                                        if (formData.languages !== lang.name) {
+                                                                        if (!formData.languages.includes(lang.name)) {
                                                                             e.currentTarget.style.backgroundColor = '#f8f9fa';
                                                                         }
                                                                     }}
                                                                     onMouseLeave={(e) => {
-                                                                        if (formData.languages !== lang.name) {
+                                                                        if (!formData.languages.includes(lang.name)) {
                                                                             e.currentTarget.style.backgroundColor = 'transparent';
                                                                         }
                                                                     }}
                                                                 >
                                                                     {lang.name}
-                                                                    {formData.languages === lang.name && (
+                                                                    {formData.languages.includes(lang.name) && (
                                                                         <span style={{
                                                                             marginLeft: '0.5rem',
                                                                             color: '#7c6fd6',
@@ -1468,7 +1498,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                         <input
                                             type="text"
                                             name="languages"
-                                            value={formData.languages}
+                                            value={serializeLanguages(formData.languages)}
                                             onChange={() => {}} // Controlled by the custom select
                                             required
                                             style={{ display: 'none' }}
@@ -1483,7 +1513,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                             fontSize: '0.85rem',
                                             color: '#6c757d'
                                         }}>
-                                            Select the primary language for this {categoryName.toLowerCase()}
+                                            Select one or more languages for this {categoryName.toLowerCase()}
                                         </small>
                                     </div>
                                 )}

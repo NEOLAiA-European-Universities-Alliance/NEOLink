@@ -20,6 +20,19 @@ const ERC_AREA_LABELS = {
     SH: 'Social Sciences and Humanities (SH)'
 };
 
+const parseLanguagesFilter = (value) => {
+    if (Array.isArray(value)) {
+        return value.filter((entry) => typeof entry === 'string' && entry.trim() !== '');
+    }
+    if (typeof value === 'string') {
+        return value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+    }
+    return [];
+};
+
 function ItemsList() {
     const navigate = useNavigate();
     const [items, setItems] = useState([]);
@@ -192,7 +205,7 @@ function ItemsList() {
             case 'item_status':
                 return `Status: ${value}`;
             case 'languages':
-                return `Language: ${value}`;
+                return `Languages: ${value}`;
             case 'level_of_study':
                 return `Level of study: ${value}`;
             case 'erc_area':
@@ -316,18 +329,22 @@ function ItemsList() {
         try {
             // Build query string from filters
             const queryParams = new URLSearchParams();
+            queryParams.append('populate[item_category]', 'true');
             
             // Multi-field search using $or operator
+            let andGroupIndex = 0;
+
             if (filters.search) {
                 const searchTerm = filters.search;
-                queryParams.append('filters[$or][0][name][$containsi]', searchTerm);
-                queryParams.append('filters[$or][1][description][$containsi]', searchTerm);
-                queryParams.append('filters[$or][2][learning_outcomes][$containsi]', searchTerm);
-                queryParams.append('filters[$or][3][speakers][$containsi]', searchTerm);
-                queryParams.append('filters[$or][4][pedagogical_objectives][$containsi]', searchTerm);
-                queryParams.append('filters[$or][5][level_of_study][$containsi]', searchTerm);
-                queryParams.append('filters[$or][6][seller_name][$containsi]', searchTerm);
-                queryParams.append('filters[$or][7][multimedial_material_provided][$containsi]', searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][0][name][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][1][description][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][2][learning_outcomes][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][3][speakers][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][4][pedagogical_objectives][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][5][level_of_study][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][6][seller_name][$containsi]`, searchTerm);
+                queryParams.append(`filters[$and][${andGroupIndex}][$or][7][multimedial_material_provided][$containsi]`, searchTerm);
+                andGroupIndex += 1;
             }
             
             if (filters.category_id) {
@@ -357,8 +374,11 @@ function ItemsList() {
             }
 
             // Languages filter
-            if (filters.languages) {
-                queryParams.append('filters[languages][$containsi]', filters.languages);
+            const selectedLanguages = parseLanguagesFilter(filters.languages);
+            if (selectedLanguages.length > 0) {
+                selectedLanguages.forEach((language, idx) => {
+                    queryParams.append(`filters[$and][${andGroupIndex}][$or][${idx}][languages][$containsi]`, language);
+                });
             }
 
             // Level of study filter

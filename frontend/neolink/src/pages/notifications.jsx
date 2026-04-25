@@ -56,7 +56,7 @@ const toDisplayText = (value) => {
         return '';
     }
     if (typeof value === 'object') {
-        return value.name || value.label || value.attributes?.name || value.documentId || value.id || '';
+        return value.name || value.university_name || value.label || value.attributes?.name || value.attributes?.university_name || value.documentId || value.id || '';
     }
     return String(value);
 };
@@ -69,6 +69,34 @@ const formatCriteria = (criteria = {}, resolveValue = (_, value) => value) => {
     return entries.map(([key, value]) => {
         const label = CRITERIA_LABELS[key] || key.replace(/_/g, ' ');
         return `${label}: ${toDisplayText(resolveValue(key, value))}`;
+    });
+};
+
+const expandLanguageChips = (chips = []) => {
+    return chips.flatMap((chip) => {
+        if (typeof chip !== 'string') {
+            return [];
+        }
+
+        const [label, rawValue] = chip.split(':');
+        if (!label || !rawValue) {
+            return [chip];
+        }
+
+        if (label.trim().toLowerCase() !== 'language') {
+            return [chip];
+        }
+
+        const languages = rawValue
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+
+        if (languages.length === 0) {
+            return [chip];
+        }
+
+        return languages.map((language) => `${label.trim()}: ${language}`);
     });
 };
 
@@ -281,6 +309,28 @@ function NotificationsPage() {
         const itemName = notification.item?.name || notification.title || 'Item';
         const isUnread = !notification.is_read;
         const isItemDeleted = !notification.item;
+        const notificationCriteria = notification.subscription?.criteria || {};
+        const resolvedCriteriaChips = expandLanguageChips(formatCriteria(
+            notificationCriteria,
+            (key, value) => {
+                if (key === 'university') {
+                    return universitiesById[value] || value;
+                }
+                if (key === 'erc_area') {
+                    return ERC_AREA_LABELS[value] || value;
+                }
+                if (key === 'erc_panel') {
+                    return ercPanelsById[value] || value;
+                }
+                if (key === 'erc_keyword') {
+                    return ercKeywordsById[value] || value;
+                }
+                return value;
+            }
+        ));
+        const notificationBody = resolvedCriteriaChips.length > 0
+            ? `This item matches your alert: ${resolvedCriteriaChips.join(' | ')}.`
+            : notification.body;
 
         return (
             <div
@@ -316,7 +366,7 @@ function NotificationsPage() {
                     </span>
                 </div>
 
-                <p style={{ marginTop: '0.75rem', marginBottom: '0.75rem', color: '#495057', lineHeight: '1.6', fontSize: '0.95rem', textAlign: 'left' }}>{notification.body}</p>
+                <p style={{ marginTop: '0.75rem', marginBottom: '0.75rem', color: '#495057', lineHeight: '1.6', fontSize: '0.95rem', textAlign: 'left' }}>{notificationBody}</p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', justifyContent: 'flex-start' }}>
                     <span style={{
@@ -394,6 +444,7 @@ function NotificationsPage() {
                 return value;
             }
         );
+        const chipsExpanded = expandLanguageChips(chips);
         const isPaused = !subscription.is_active;
         const isPending = subscriptionPendingId === subscription.documentId;
 
@@ -435,9 +486,9 @@ function NotificationsPage() {
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '1rem 0' }}>
-                    {chips.map((chip) => (
+                    {chipsExpanded.map((chip, index) => (
                         <span
-                            key={chip}
+                            key={`${chip}-${index}`}
                             style={{
                                 backgroundColor: '#f0f0ff',
                                 borderRadius: '999px',

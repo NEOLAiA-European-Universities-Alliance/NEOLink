@@ -9,7 +9,7 @@ const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 
 function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
     const [formData, setFormData] = useState({
-        group_display_name: (initialData?.group_display_name || initialData?.name || '').slice(0, 20),
+        group_display_name: (initialData?.group_display_name || initialData?.name || '').slice(0, 60),
         group_description: initialData?.group_description || initialData?.description,
     });
     const [submitting, setSubmitting] = useState(false);
@@ -19,7 +19,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        const normalizedValue = name === 'group_display_name' ? value.slice(0, 20) : value;
+        const normalizedValue = name === 'group_display_name' ? value.slice(0, 60) : value;
         setFormData(prev => ({
             ...prev,
             [name]: normalizedValue
@@ -250,13 +250,13 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                     onChange={handleInputChange}
                                     placeholder="Enter the name users will see"
                                     required
-                                    maxLength={20}
+                                    maxLength={60}
                                     style={inputStyle}
                                     onFocus={(e) => e.target.style.borderColor = '#7c6fd6'}
                                     onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
                                 />
                                 <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                    This is the friendly name displayed to users (max 20 characters: {formData.group_display_name.length}/20)
+                                    This is the friendly name displayed to users (max 60 characters: {formData.group_display_name.length}/60)
                                 </small>
                             </div>
 

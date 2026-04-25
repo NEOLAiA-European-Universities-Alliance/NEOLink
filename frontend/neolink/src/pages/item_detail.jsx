@@ -5,6 +5,7 @@ import { base_url, discourse_url, orh_url } from "../api";
 import { jwtDecode } from "jwt-decode";
 import Navbar from "../components/navbar.jsx";
 import QRCode from "qrcode";
+import { getCategoryFallbackImage } from "../utils.jsx";
 
 const logo_neolaia = "/logoNEOLAiA.png";
 const eu_logo = "/eu_logo.png";
@@ -367,6 +368,13 @@ function ItemDetail() {
         }
     };
 
+    const languageChips = typeof item?.languages === 'string'
+        ? item.languages
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : [];
+
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
             const uploadBaseUrl = getUploadBaseUrl();
@@ -375,7 +383,7 @@ function ItemDetail() {
             }
             return `${uploadBaseUrl}${coverImage.url}`;
         }
-        return 'https://placehold.co/1200x400?text=No+Cover+Image';
+        return getCategoryFallbackImage(item?.item_category?.name, 'banner');
     };
 
     // Helper function to format ISCED display
@@ -602,7 +610,11 @@ function ItemDetail() {
                     borderRadius: '16px',
                     overflow: 'hidden',
                     marginBottom: '2rem',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    backgroundColor: '#f8f9fa',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                 }}>
                     <img 
                         src={getCoverImageUrl()}
@@ -613,7 +625,8 @@ function ItemDetail() {
                             objectFit: 'cover'
                         }}
                         onError={(e) => {
-                            e.target.src = 'https://placehold.co/1200x400?text=No+Image';
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getCategoryFallbackImage(item?.item_category?.name, 'banner');
                         }}
                     />
                 </div>
@@ -1018,15 +1031,30 @@ function ItemDetail() {
                                 </div>
                         )}
 
-                        {item.languages && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {languageChips.length > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                                 <span style={{ fontSize: '1.2rem' }}>🌐</span>
                                 <div>
                                     <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
                                         Languages
                                     </div>
-                                    <div style={{ fontWeight: '600', color: '#495057' }}>
-                                        {item.languages}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.2rem' }}>
+                                        {languageChips.map((language) => (
+                                            <span
+                                                key={language}
+                                                style={{
+                                                    padding: '0.2rem 0.6rem',
+                                                    borderRadius: '999px',
+                                                    backgroundColor: '#eef2ff',
+                                                    border: '1px solid #d6ddff',
+                                                    color: '#4c57a8',
+                                                    fontWeight: '600',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                {language}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

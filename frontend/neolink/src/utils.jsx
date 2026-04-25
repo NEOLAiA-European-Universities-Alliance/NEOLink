@@ -53,6 +53,31 @@ function getCategoryIcon(categoryName) {
     return other_logo;
 }
 
+function getCategoryFallbackImage(categoryName, size = 'card') {
+    const name = categoryName?.toLowerCase().replace(/[\s_-]/g, '') || '';
+    const isBanner = size === 'banner';
 
-export {token_is_valid, getCategoryIcon};
+    if (name.includes('bip')) {
+        return `${import.meta.env.BASE_URL}${isBanner ? 'bip_banner.png' : 'bip_banner_small.png'}`;
+    }
+    if (name.includes('coil')) {
+        return `${import.meta.env.BASE_URL}${isBanner ? 'coil_banner.png' : 'coil_banner_small.png'}`;
+    }
+    if (name.includes('focus')) {
+        return `${import.meta.env.BASE_URL}${isBanner ? 'focus_banner.png' : 'focus_banner_small.png'}`;
+    }
+    if (name.includes('neoteach')) {
+        return `${import.meta.env.BASE_URL}${isBanner ? 'neoteach_banner.png' : 'neoteach_banner_small.png'}`;
+    }
+    if (name.includes('virtual')) {
+        return `${import.meta.env.BASE_URL}${isBanner ? 'virtual_banner.png' : 'virtual_banner_small.png'}`;
+    }
+    if (name.includes('summer') || name.includes('summer')) {
+        return `${import.meta.env.BASE_URL}${isBanner ? 'summer_banner.png' : 'summer_banner_small.png'}`;
+    }
 
+    return `${import.meta.env.BASE_URL}${isBanner ? 'default_banner.png' : 'default_banner_small.png'}`;
+}
+
+
+export {token_is_valid, getCategoryIcon, getCategoryFallbackImage};

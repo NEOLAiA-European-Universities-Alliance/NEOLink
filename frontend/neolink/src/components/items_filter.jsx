@@ -1,7 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { base_url } from "../api";
 import { shouldShowField } from "../category_field_config";
+import { LANGUAGES } from "../config/languages";
+
+const parseLanguages = (value) => {
+    if (Array.isArray(value)) {
+        return value.filter((entry) => typeof entry === 'string' && entry.trim() !== '');
+    }
+    if (typeof value === 'string') {
+        return value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+    }
+    return [];
+};
+
+const serializeLanguages = (values) => {
+    if (!Array.isArray(values)) {
+        return '';
+    }
+    return values.map((entry) => entry.trim()).filter(Boolean).join(', ');
+};
 
 function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeRequest = () => {}, canSubscribe = true, subscriptionHint = '' }) {
     const [categories, setCategories] = useState([]);
@@ -10,6 +31,9 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
     const [ercKeywords, setErcKeywords] = useState([]);
     const [selectedCategoryName, setSelectedCategoryName] = useState('');
     const [showDateFilters, setShowDateFilters] = useState(false);
+    const [languageSearch, setLanguageSearch] = useState('');
+    const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+    const languageDropdownRef = useRef(null);
 
     const itemStatusOptions = [
         { value: 'active', label: 'Active' },
@@ -210,6 +234,28 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                            shouldShowField('start_date', selectedCategoryName) || 
                            shouldShowField('end_date', selectedCategoryName) || 
                            shouldShowField('expiration', selectedCategoryName);
+
+    const selectedLanguages = parseLanguages(filters.languages);
+    const filteredLanguages = LANGUAGES.filter((lang) =>
+        lang.name.toLowerCase().includes(languageSearch.toLowerCase())
+    );
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
+                setIsLanguageDropdownOpen(false);
+                setLanguageSearch('');
+            }
+        };
+
+        if (isLanguageDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isLanguageDropdownOpen]);
 
     return (
         <div style={{
@@ -700,15 +746,137 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                     <>
                         <div style={sectionHeaderStyle}>Content Details</div>
                         {(!selectedCategoryName || shouldShowField('languages', selectedCategoryName)) && (
-                            <div>
+                            <div style={{ position: 'relative' }} ref={languageDropdownRef}>
                                 <label style={labelStyle}>Languages</label>
-                                <input
-                                    type="text"
-                                    value={filters.languages || ''}
-                                    onChange={(e) => handleChange('languages', e.target.value)}
-                                    placeholder="e.g., English, Spanish"
-                                    style={inputStyle}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <div
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setIsLanguageDropdownOpen(!isLanguageDropdownOpen);
+                                            }
+                                        }}
+                                        onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                                        style={{
+                                            ...inputStyle,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+                                        }}
+                                    >
+                                        <span style={{ color: selectedLanguages.length > 0 ? '#495057' : '#6c757d' }}>
+                                            {selectedLanguages.length > 0
+                                                ? selectedLanguages.join(', ')
+                                                : 'Select one or more languages'}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.8rem',
+                                            color: '#6c757d',
+                                            marginLeft: '0.5rem',
+                                            transform: isLanguageDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s'
+                                        }}>
+                                            ▼
+                                        </span>
+                                    </div>
+
+                                    {isLanguageDropdownOpen && (
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 0,
+                                                right: 0,
+                                                marginTop: '0.25rem',
+                                                backgroundColor: 'white',
+                                                border: '2px solid #7c6fd6',
+                                                borderRadius: '8px',
+                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                zIndex: 1000,
+                                                maxHeight: '350px',
+                                                display: 'flex',
+                                                flexDirection: 'column'
+                                            }}
+                                        >
+                                            <div style={{ padding: '0.75rem', borderBottom: '1px solid #dee2e6' }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search languages..."
+                                                    value={languageSearch}
+                                                    onChange={(e) => setLanguageSearch(e.target.value)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.5rem',
+                                                        border: '1px solid #dee2e6',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.9rem',
+                                                        outline: 'none'
+                                                    }}
+                                                    autoFocus
+                                                />
+                                            </div>
+
+                                            <div style={{ overflowY: 'auto', maxHeight: '280px' }}>
+                                                {filteredLanguages.length === 0 ? (
+                                                    <div style={{
+                                                        padding: '1rem',
+                                                        textAlign: 'center',
+                                                        color: '#6c757d',
+                                                        fontSize: '0.9rem'
+                                                    }}>
+                                                        No languages found
+                                                    </div>
+                                                ) : (
+                                                    filteredLanguages.map((lang) => (
+                                                        <div
+                                                            key={lang.code}
+                                                            onClick={() => {
+                                                                const alreadySelected = selectedLanguages.includes(lang.name);
+                                                                const updatedLanguages = alreadySelected
+                                                                    ? selectedLanguages.filter((entry) => entry !== lang.name)
+                                                                    : [...selectedLanguages, lang.name];
+                                                                handleChange('languages', serializeLanguages(updatedLanguages));
+                                                            }}
+                                                            style={{
+                                                                padding: '0.75rem 1rem',
+                                                                cursor: 'pointer',
+                                                                backgroundColor: selectedLanguages.includes(lang.name) ? '#f0f0ff' : 'transparent',
+                                                                borderLeft: selectedLanguages.includes(lang.name) ? '3px solid #7c6fd6' : '3px solid transparent',
+                                                                transition: 'all 0.2s',
+                                                                fontSize: '0.9rem',
+                                                                color: '#495057'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (!selectedLanguages.includes(lang.name)) {
+                                                                    e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                if (!selectedLanguages.includes(lang.name)) {
+                                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                                }
+                                                            }}
+                                                        >
+                                                            {lang.name}
+                                                            {selectedLanguages.includes(lang.name) && (
+                                                                <span style={{
+                                                                    marginLeft: '0.5rem',
+                                                                    color: '#7c6fd6',
+                                                                    fontWeight: '600'
+                                                                }}>
+                                                                    ✓
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                         {(!selectedCategoryName || shouldShowField('level_of_study', selectedCategoryName)) && (

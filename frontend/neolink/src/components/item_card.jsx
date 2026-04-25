@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { base_url } from "../api";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { getCategoryFallbackImage } from "../utils.jsx";
 
 function ItemCard({ item }) {
     const navigate = useNavigate();
@@ -48,29 +49,33 @@ function ItemCard({ item }) {
         }
     };
 
+    const languageChips = typeof item.languages === 'string'
+        ? item.languages
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : [];
+
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
+            const uploadBaseUrl = base_url.replace('/api', '');
             // Use the medium format if available, otherwise use the original
             if (coverImage.formats?.small) {
                 console.log("Using medium format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.small.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.small.url}`;
             } else if (coverImage.formats?.thumbnail) {
                 console.log("Using thumbnail format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.thumbnail.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.thumbnail.url}`;
             } else if (coverImage.formats?.medium) {
                 console.log("Using medium format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.medium.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.medium.url}`;
             } else if (coverImage.formats?.large) {
                 console.log("Using large format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.large.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.large.url}`;
             }
-            return `${base_url}${coverImage.url}`;
+            return `${uploadBaseUrl}${coverImage.url}`;
         }
-        return 'https://placehold.co/400x250?text=No+Image';
+        return getCategoryFallbackImage(item?.item_category?.name, 'card');
     };
 
     return (
@@ -134,7 +139,8 @@ function ItemCard({ item }) {
                             objectFit: 'cover'
                         }}
                         onError={(e) => {
-                            e.target.src = 'https://placehold.co/400x250?text=No+Image';
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getCategoryFallbackImage(item?.item_category?.name, 'card');
                         }}
                     />
                 )}
@@ -208,10 +214,27 @@ function ItemCard({ item }) {
                         </div>
                     )}
                     
-                    {item.languages && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {languageChips.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                             <span style={{ color: '#6c757d' }}>🌐</span>
-                            <span style={{ color: '#495057' }}>{item.languages}</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                {languageChips.map((language) => (
+                                    <span
+                                        key={language}
+                                        style={{
+                                            padding: '0.15rem 0.55rem',
+                                            borderRadius: '999px',
+                                            backgroundColor: '#eef2ff',
+                                            border: '1px solid #d6ddff',
+                                            color: '#4c57a8',
+                                            fontWeight: '600',
+                                            fontSize: '0.75rem'
+                                        }}
+                                    >
+                                        {language}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     )}
 
